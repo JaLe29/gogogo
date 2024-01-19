@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# set -x 
+
+ROOT_DIR="$( cd "$( dirname "$0" )/.." && pwd )"
+
+docker run -p 8080:8080 -e SWAGGER_JSON=/mnt/open-api-schema.yaml -v ${ROOT_DIR}:/mnt swaggerapi/swagger-ui:v5.0.0

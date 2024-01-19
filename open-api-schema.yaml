@@ -1,0 +1,130 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Bastard proxy api
+paths:
+  /proxy:
+
+    post:    
+      tags:
+        - Proxy
+      summary: Create a new proxy
+      description: Create a new proxy
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewProxy"
+
+      responses:
+        "201":
+          description: Proxy response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+    get:
+      tags:
+        - Proxy
+      summary: Get all proxies
+      description: Get all proxies
+
+      responses:
+        "200":
+          description: Proxy response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proxy"
+
+    delete:
+      tags:
+        - Proxy
+      summary: Delete a proxy
+      description: Delete a proxy
+
+      parameters:
+        - name: id
+          in: query
+          description: Id of the proxy
+          required: true
+          schema:
+            type: string 
+
+      responses:
+        "200":
+          description: Proxy response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /activity:
+
+    get:
+      tags:
+        - Activity
+      summary: Get all activities
+      description: Get all activities
+
+      responses:
+        "200":
+          description: Activity response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+                  
+components:
+  schemas:
+    NewProxy:
+      required:
+        - source
+        - target 
+
+      properties:
+        source:
+          type: string 
+        target:
+          type: string 
+
+    Proxy: 
+      properties:
+        id:
+          type: string 
+        createdAt:
+          type: string
+          format: date-time
+        source:
+          type: string 
+        target:
+          type: string
+
+    Activity:
+      properties:
+        id:
+          type: string 
+        createdAt:
+          type: string
+          format: date-time
+        proxyId:
+          type: string 
+        ip:
+          type: string  
+    
+    SuccessResponse:
+      required:
+        - message
+
+      properties:
+        message:
+          type: string
+          description: Message of the response
+          example: Success

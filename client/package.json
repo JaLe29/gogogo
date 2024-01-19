@@ -1,0 +1,41 @@
+{
+	"publishConfig": {
+		"registry": "https://npmjs.com"
+	},
+	"name": "bastard-proxy",
+	"version": "1.0.0",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"license": "MIT",
+	"scripts": {
+		"patch:production:package": "node ./scripts/patch-production-package.js",
+		"lint": "yarn workspaces foreach -v -p -i -j 30 run lint",
+		"prisma:generate": "yarn workspaces foreach -v -p -i -j 30 run prisma:generate",
+		"typecheck": "yarn workspaces foreach -v -p -i -j 30 run typecheck && yarn workspaces foreach -v -p -i -j 30 run clean",
+		"lint:fix": "yarn workspaces foreach -v -p -i -j 30 run lint:fix",
+		"clean": "yarn workspaces foreach -v -p -i -j 30 run clean && rimraf dist && rimraf .cache && rimraf node_modules",
+		"sc": "yarn workspace @bastard-proxy/client dev"
+	},
+	"dependencies": {
+		"@types/node": "^18.19.4",
+		"@types/prettier": "^3.0.0",
+		"@typescript-eslint/eslint-plugin": "^6.18.1",
+		"@typescript-eslint/parser": "^6.18.1",
+		"eslint": "^8.56.0",
+		"eslint-config-airbnb": "^18.2.1",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-babel": "^5.3.1",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-jsx-a11y": "^6.8.0",
+		"eslint-plugin-prettier": "^5.1.3",
+		"eslint-plugin-react": "^7.33.2",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"prettier": "^3.2.1",
+		"rimraf": "^5.0.5",
+		"typescript": "~5.3.3"
+	},
+	"packageManager": "yarn@3.5.0"
+}

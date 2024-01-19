@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# set -x
+
+# go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+ROOT_DIR="$( cd "$( dirname "$0" )/.." && pwd )"
+
+oapi-codegen -generate gin,types,spec -package openapi ${ROOT_DIR}/open-api-schema.yaml  > ${ROOT_DIR}/internal/app/openapi/openapi.go

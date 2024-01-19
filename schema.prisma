@@ -1,0 +1,34 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator db {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model Proxy {
+  // ----------------------------------------------
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // ----------------------------------------------
+  source    String
+  target    String
+
+  // Relation to Activity
+  activities Activity[]
+}
+
+model Activity {
+  // ----------------------------------------------
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  // ----------------------------------------------
+  ip        String  @db.String
+  // ----------------------------------------------
+  // Relation to Proxy
+  proxy       Proxy?   @relation(fields: [proxyId], references: [id])
+  proxyId     String?  @db.ObjectId
+}

@@ -6,4 +6,4 @@
 
 ROOT_DIR="$( cd "$( dirname "$0" )/.." && pwd )"
 
-oapi-codegen -generate gin,types,spec -package openapi ${ROOT_DIR}/open-api-schema.yaml  > ${ROOT_DIR}/internal/app/openapi/openapi.go
+oapi-codegen -generate gin,types,spec -package openapi ${ROOT_DIR}/open-api-schema.yaml  > ${ROOT_DIR}/pkg/openapi/openapi.go

@@ -3,6 +3,7 @@ package main
 import (
 	db "bastard-proxy/db"
 	container "bastard-proxy/pkg/container"
+	openapi "bastard-proxy/pkg/openapi"
 	router "bastard-proxy/pkg/router"
 	"bastard-proxy/pkg/utils"
 	"fmt"
@@ -13,12 +14,80 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gopkg.in/validator.v2"
+	middleware "github.com/oapi-codegen/gin-middleware"
 )
+
+type OpenApiServer struct {
+	container container.AppContainer
+}
+
+// DeleteProxy implements openapi.ServerInterface.
+func (aps *OpenApiServer) DeleteApiProxy(c *gin.Context, params openapi.DeleteApiProxyParams) {
+	aps.container.PrismaClient.Proxy.FindUnique(db.Proxy.ID.Equals(params.Id)).Delete().Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
+}
+
+// GetActivity implements openapi.ServerInterface.
+func (aps *OpenApiServer) GetApiActivity(c *gin.Context) {
+	res, _ := aps.container.PrismaClient.Activity.FindMany().Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, res)
+}
+
+func (aps *OpenApiServer) GetApiProxy(c *gin.Context) {
+	res, _ := aps.container.PrismaClient.Proxy.FindMany().Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, res)
+}
+
+func (aps *OpenApiServer) PostApiProxy(c *gin.Context) {
+	type Proxy struct {
+		Target string `json:"target" validate:"nonzero"`
+		Source string `json:"source" validate:"nonzero"`
+	}
+
+	var p Proxy
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	res, _ := aps.container.PrismaClient.Proxy.CreateOne(
+		db.Proxy.Source.Set(p.Source),
+		db.Proxy.Target.Set(p.Target),
+	).Exec(aps.container.Context)
+
+	aps.container.RefetchDomainMap()
+
+	c.JSON(http.StatusOK, res)
+}
+
+// Struktura implementující ServerInterface
+var _ openapi.ServerInterface = (*OpenApiServer)(nil)
+
+func NewOpenapiServer(container container.AppContainer) *OpenApiServer {
+	return &OpenApiServer{
+		container: container,
+	}
+}
+
+func newSwaggerServer() *openapi3.T {
+	swagger, err := openapi.GetSwagger()
+	if err != nil {
+		panic(err)
+	}
+	swagger.Servers = nil
+
+	return swagger
+}
 
 func main() {
 	godotenv.Load()
@@ -26,8 +95,8 @@ func main() {
 	c := container.InitContainer()
 	c.RefetchDomainMap()
 
-	go startGin(c)
-	startProxy(c)
+	go startProxy(c)
+	startGin(c)
 }
 
 func startProxy(container container.AppContainer) {
@@ -77,72 +146,25 @@ func startGin(container container.AppContainer) {
 
 	ginRouter.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"POST", "GET"},
-		AllowHeaders:     []string{"Origin"},
+		AllowMethods:     []string{"POST", "PUT", "GET", "OPTIONS", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "access-control-allow-origin", "access-control-allow-headers"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
-		MaxAge: 12 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	ginRouter.Use(static.Serve("/", static.LocalFile(clientDir, true)))
+
 	ginRouter.NoRoute(func(c *gin.Context) {
 		if !strings.HasPrefix(c.Request.RequestURI, "/api") {
 			c.File(clientDir + "/index.html")
 		}
-		//default 404 page not found
 	})
 
-	// Setup route group for the API
-	api := ginRouter.Group("/api")
-	{
-		api.GET("/proxy", func(c *gin.Context) {
-			res, _ := container.PrismaClient.Proxy.FindMany().Exec(container.Context)
+	ginRouter.Use(middleware.OapiRequestValidator(newSwaggerServer()))
 
-			c.JSON(http.StatusOK, res)
-		})
+	openapi.RegisterHandlers(ginRouter, NewOpenapiServer(container))
 
-		api.DELETE("/proxy/:id", func(c *gin.Context) {
-			id := c.Param("id")
-			res, _ := container.PrismaClient.Proxy.FindUnique(db.Proxy.ID.Equals(id)).Delete().Exec(container.Context)
-
-			c.JSON(http.StatusOK, res)
-		})
-
-		api.POST("/proxy", func(c *gin.Context) {
-			type Proxy struct {
-				Target string `json:"target" validate:"nonzero"`
-				Source string `json:"source" validate:"nonzero"`
-			}
-
-			var p Proxy
-			if err := c.ShouldBindJSON(&p); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error": err.Error(),
-				})
-				return
-			}
-
-			if err := validator.Validate(p); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error": err.Error(),
-				})
-				return
-			}
-
-			res, _ := container.PrismaClient.Proxy.CreateOne(
-				db.Proxy.Source.Set(p.Source),
-				db.Proxy.Target.Set(p.Target),
-			).Exec(container.Context)
-
-			container.RefetchDomainMap()
-
-			c.JSON(http.StatusOK, res)
-		})
-	}
-	log.Println("--------------------------------- Gin server started on port 5000")
 	// Start and run the server
 	ginRouter.Run(":5000")
 

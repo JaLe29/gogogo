@@ -2,8 +2,9 @@ openapi: "3.0.0"
 info:
   version: 1.0.0
   title: Bastard proxy api
+
 paths:
-  /proxy:
+  /api/proxy:
 
     post:    
       tags:
@@ -64,7 +65,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
-  /activity:
+  /api/activity:
 
     get:
       tags:
@@ -81,7 +82,68 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Activity"
-                  
+
+  /api/block:
+      
+      get:
+        tags:
+          - Block
+        summary: Get all blocks
+        description: Get all blocks
+  
+        responses:
+          "200":
+            description: Block response
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Block"
+      delete:
+        tags:
+          - Block
+        summary: Delete a block
+        description: Delete a block
+  
+        parameters:
+          - name: id
+            in: query
+            description: Id of the block
+            required: true
+            schema:
+              type: string 
+  
+        responses:
+          "200":
+            description: Block response
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/SuccessResponse"
+      
+      post:
+        tags:
+          - Block
+        summary: Create a new block
+        description: Create a new block
+  
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewProxy"
+  
+        responses:
+          "201":
+            description: Block response
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/SuccessResponse"
+       
+
 components:
   schemas:
     NewProxy:
@@ -118,6 +180,18 @@ components:
           type: string 
         ip:
           type: string  
+
+    Block:
+      properties:
+        id:
+          type: string 
+        createdAt:
+          type: string
+          format: date-time
+        proxyId:
+          type: string 
+        ip:
+          type: string
     
     SuccessResponse:
       required:
@@ -127,4 +201,4 @@ components:
         message:
           type: string
           description: Message of the response
-          example: Success
+          example: OK

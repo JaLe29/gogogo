@@ -2,19 +2,19 @@
   "name": "@bastard-proxy/client",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
     "@apollo/client": "^3.8.9",
+    "@tanstack/react-query": "^5.17.15",
     "antd": "^5.12.8",
     "axios": "^1.6.5",
     "axios-hooks": "^5.0.2",
     "dayjs": "^1.11.10",
     "immer": "^10.0.3",
     "lodash": "^4.17.21",
+    "orval": "^6.23.0",
     "rc-scrollbars": "^1.1.6",
     "react": "^18.2.0",
-    "react-collapsed": "^4.1.2",
     "react-device-detect": "^2.2.3",
     "react-dom": "^18.2.0",
     "react-highlight-words": "^0.20.0",
@@ -27,13 +27,6 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^4.0.1",
-    "@graphql-codegen/client-preset": "^4.1.0",
-    "@graphql-codegen/typescript": "^4.0.1",
-    "@graphql-codegen/typescript-operations": "^3.0.4",
-    "@graphql-codegen/typescript-react-apollo": "^3.3.7",
-    "@graphql-tools/graphql-file-loader": "^8.0.0",
-    "@graphql-tools/load": "^8.0.1",
     "@trpc/server": "^10.45.0",
     "@types/lodash": "^4.14.202",
     "@types/node": "^18.19.4",
@@ -43,7 +36,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.56.0",
     "gql-generator-node": "^2.1.16",
-    "graphql": "^16.8.1",
+    "orval": "^6.23.0",
     "typescript": "~5.3.3",
     "vite": "^5.0.11",
     "vite-plugin-checker": "^0.6.2"
@@ -51,7 +44,7 @@
   "scripts": {
     "lint": "eslint ./src --ext .ts,.tsx",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
-    "gql:gen": "graphql-codegen --config ./scripts/codegen.ts",
+    "gen": "orval",
     "start": "node scripts/start.js",
     "dev": "vite dev",
     "build": "vite build --mode release"

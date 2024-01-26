@@ -27,6 +27,19 @@ type Activity struct {
 	ProxyId   *string    `json:"proxyId,omitempty"`
 }
 
+// Block defines model for Block.
+type Block struct {
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	Id        *string    `json:"id,omitempty"`
+	Ip        *string    `json:"ip,omitempty"`
+	ProxyId   *string    `json:"proxyId,omitempty"`
+}
+
+// NewBlock defines model for NewBlock.
+type NewBlock struct {
+	Ip string `json:"ip"`
+}
+
 // NewProxy defines model for NewProxy.
 type NewProxy struct {
 	Source string `json:"source"`
@@ -47,11 +60,20 @@ type SuccessResponse struct {
 	Message string `json:"message"`
 }
 
+// DeleteApiBlockProxyIdParams defines parameters for DeleteApiBlockProxyId.
+type DeleteApiBlockProxyIdParams struct {
+	// Id Id of the block
+	Id string `form:"id" json:"id"`
+}
+
 // DeleteApiProxyParams defines parameters for DeleteApiProxy.
 type DeleteApiProxyParams struct {
 	// Id Id of the proxy
 	Id string `form:"id" json:"id"`
 }
+
+// PostApiBlockProxyIdJSONRequestBody defines body for PostApiBlockProxyId for application/json ContentType.
+type PostApiBlockProxyIdJSONRequestBody = NewBlock
 
 // PostApiProxyJSONRequestBody defines body for PostApiProxy for application/json ContentType.
 type PostApiProxyJSONRequestBody = NewProxy
@@ -59,8 +81,17 @@ type PostApiProxyJSONRequestBody = NewProxy
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get all activities
-	// (GET /api/activity)
-	GetApiActivity(c *gin.Context)
+	// (GET /api/activity/{proxyId})
+	GetApiActivityProxyId(c *gin.Context, proxyId string)
+	// Delete a block
+	// (DELETE /api/block/{proxyId})
+	DeleteApiBlockProxyId(c *gin.Context, proxyId string, params DeleteApiBlockProxyIdParams)
+	// Get all blocks
+	// (GET /api/block/{proxyId})
+	GetApiBlockProxyId(c *gin.Context, proxyId string)
+	// Create a new block
+	// (POST /api/block/{proxyId})
+	PostApiBlockProxyId(c *gin.Context, proxyId string)
 	// Delete a proxy
 	// (DELETE /api/proxy)
 	DeleteApiProxy(c *gin.Context, params DeleteApiProxyParams)
@@ -81,8 +112,19 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(c *gin.Context)
 
-// GetApiActivity operation middleware
-func (siw *ServerInterfaceWrapper) GetApiActivity(c *gin.Context) {
+// GetApiActivityProxyId operation middleware
+func (siw *ServerInterfaceWrapper) GetApiActivityProxyId(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameter("simple", false, "proxyId", c.Param("proxyId"), &proxyId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -91,7 +133,97 @@ func (siw *ServerInterfaceWrapper) GetApiActivity(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetApiActivity(c)
+	siw.Handler.GetApiActivityProxyId(c, proxyId)
+}
+
+// DeleteApiBlockProxyId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteApiBlockProxyId(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameter("simple", false, "proxyId", c.Param("proxyId"), &proxyId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteApiBlockProxyIdParams
+
+	// ------------- Required query parameter "id" -------------
+
+	if paramValue := c.Query("id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Query argument id is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "id", c.Request.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteApiBlockProxyId(c, proxyId, params)
+}
+
+// GetApiBlockProxyId operation middleware
+func (siw *ServerInterfaceWrapper) GetApiBlockProxyId(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameter("simple", false, "proxyId", c.Param("proxyId"), &proxyId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetApiBlockProxyId(c, proxyId)
+}
+
+// PostApiBlockProxyId operation middleware
+func (siw *ServerInterfaceWrapper) PostApiBlockProxyId(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameter("simple", false, "proxyId", c.Param("proxyId"), &proxyId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.PostApiBlockProxyId(c, proxyId)
 }
 
 // DeleteApiProxy operation middleware
@@ -180,7 +312,10 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.GET(options.BaseURL+"/api/activity", wrapper.GetApiActivity)
+	router.GET(options.BaseURL+"/api/activity/:proxyId", wrapper.GetApiActivityProxyId)
+	router.DELETE(options.BaseURL+"/api/block/:proxyId", wrapper.DeleteApiBlockProxyId)
+	router.GET(options.BaseURL+"/api/block/:proxyId", wrapper.GetApiBlockProxyId)
+	router.POST(options.BaseURL+"/api/block/:proxyId", wrapper.PostApiBlockProxyId)
 	router.DELETE(options.BaseURL+"/api/proxy", wrapper.DeleteApiProxy)
 	router.GET(options.BaseURL+"/api/proxy", wrapper.GetApiProxy)
 	router.POST(options.BaseURL+"/api/proxy", wrapper.PostApiProxy)
@@ -189,16 +324,18 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xVzW7TQBB+FWvgaOoUbr6lIKEKARUcUQ4je5Iuine3s+O2VrXvjmYdu0nsRAiKxM3Z",
-	"+f1+dvMElWu8s2QlQPkEobqlBtPnshJzb6TTb8/OE4uhFKmYUKheiv5YO25QoIQahd6IaQhykM4TlBCE",
-	"jd1AzMHUmjs99rPHnt1jdz1XEmMOX+jhRhOmiwXXckWzLQV5QzLXMQemu9Yw1VD+GFqMBauYw4lpL0fD",
-	"H+0dc/jeVhWF8I2CdzbQdMWGQsBNCtQUKjZejLNQwuc+kLl1JreU8dAhB3rExm910tdPUwhHbA39V2kd",
-	"Y9cubWokNbjCIMh1luTM0BvI4Z449CtcXiwuFgrRebIaLOFdOsrBo9ym/Qv0psA9I+64OATzkSTD7Tbb",
-	"JSr21JVRE9RHmrL0ZrS0ougRpzFvF4skqLNCNg1A77emSvXFz6BThruhX0aoSYWvmdZQwqvi+RYVuytU",
-	"jMPiyCIyY9dLd4hgyH0WQnNC2zTI3SmEgpugIoyDVlqUKPODY2vakszo/yGdZ9hrM6GrDy+9udmFPTI2",
-	"JMQ68bjZdT34aOhm9PiuJdYfFhsFb2rYN49wS/kep8dGW/2lRuekOb43M4ok4KfkmLA3SNHTpW/GWaNq",
-	"2WmXDpz/e4v2k37Dn2fZmKKa0uFdmOHjfXpBM8wsPZxw4o0Lh5zctRTkytXdi7lh/D+Jh8+bOjROZLj8",
-	"b1w4y94x9THGXwEAAP//eI1IB+QHAAA=",
+	"H4sIAAAAAAAC/9RWTW/TQBD9K9bA0dQp3HxLQUIVAiI4Vjks9iRdiL3b3XFbK/J/RzO2YxLb+YBWpLfE",
+	"u/P13ptnryExmTU55uQhXoNPbjFT8nOakL7XVPJv64xFRxrlJHGoCNMp8Z+FcZkiiCFVhG9IZwghUGkR",
+	"YvDkdL6EKgSd8t3+Yzv42DrzWF4PhVRVCFcrk/w6u66+4MNIY4PpqhAc3hXaYQrxDd+Z10lmXKWfxJvC",
+	"JTjYFym3RDpco0mxCeCCI9WeDsu/6rsK4XuRJOj9N/TW5B77LWbovVrKQYo+cdqSNjnE8Lk+CMwioFsM",
+	"XJshBHxUmV1xpa+f+iPsoNXmn0s7Ol8Y6VSTJLhSnpRLA9FEoKyGEO7R+bqFy4vJxYRHNBZzPozhnTwK",
+	"wSq6lf4jZXWkmh2L1o24Kj5qUNke6yNSoFaroAlhFCS/U3yBZclXpla3eztr5Mo1ncqQ0HmIb3bzXqeM",
+	"lFUOc6rHAR4XYmkVQshVxhPbTboOJXIFho1nDPE458s1/DLz28lE1GVywlxmVNaudCIjRD89N7T+I58m",
+	"zCTwtcMFxPAq6twqaqwq2vhUtaFUOafKWkfbw7Z3O1XwHV9kmXLlGMiklgxcZ4hzDhL+fvDGb5OX4gpp",
+	"QJYf5HmgAonpcVcfT60WEzmJO1Z5m1SIuyvQlR1z+jTSwpekkH3C2LWQAT0I2GNi6DHWCqH2ebbPvZsq",
+	"YWNbejrNL3hFa8CO2M+9fPRw7fNhjR8g5L28zQIV5Pgwsn4z48+OlbsCPV2ZtHyyjdh8o1Tbbztup+oJ",
+	"4fJsNnGQwF32W0+27SfNQSduSRtx4llzfKQFb0ng3yz4P7uiDH7QFdt5Wx5quA66IoeNf7y0mD+/J9WV",
+	"jvCkvWj0p+rDcYQpDSuxMaUOk2dxhAaIs3OEvbgPorcLfVVVvwMAAP//VXVphuAOAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

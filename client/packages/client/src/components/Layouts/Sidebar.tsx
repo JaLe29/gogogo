@@ -1,4 +1,4 @@
-import { IdcardOutlined, ProfileOutlined } from '@ant-design/icons';
+import { ProfileOutlined } from '@ant-design/icons';
 import { Button, Layout } from 'antd';
 import React from 'react';
 import { isMobile } from 'react-device-detect';
@@ -48,14 +48,14 @@ const SideBar: React.FC = () => {
 								Proxy
 							</StyledButton>
 						</Link>
-						<Link to={ROUTES.APP.ACTIVITY}>
+						{/* <Link to={ROUTES.APP.ACTIVITY}>
 							<StyledButton
 								type={pathname.startsWith(ROUTES.APP.ACTIVITY) ? 'link' : 'text'}
 								icon={<IdcardOutlined />}
 							>
 								Activity
 							</StyledButton>
-						</Link>
+						</Link> */}
 					</div>
 				</div>
 			</StyledAntdSidebar>

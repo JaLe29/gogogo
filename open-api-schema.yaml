@@ -6,7 +6,7 @@ info:
 paths:
   /api/proxy:
 
-    post:    
+    post:
       tags:
         - Proxy
       summary: Create a new proxy
@@ -55,7 +55,7 @@ paths:
           description: Id of the proxy
           required: true
           schema:
-            type: string 
+            type: string
 
       responses:
         "200":
@@ -65,13 +65,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
-  /api/activity:
+  /api/activity/{proxyId}:
 
     get:
       tags:
         - Activity
       summary: Get all activities
       description: Get all activities
+      parameters:
+        - in: path
+          name: proxyId
+          schema:
+            type: string
+          required: true
+          description: Id of parent proxy
 
       responses:
         "200":
@@ -83,14 +90,22 @@ paths:
                 items:
                   $ref: "#/components/schemas/Activity"
 
-  /api/block:
-      
+  /api/block/{proxyId}:
+
       get:
         tags:
           - Block
         summary: Get all blocks
         description: Get all blocks
-  
+
+        parameters:
+          - in: path
+            name: proxyId
+            schema:
+              type: string
+            required: true
+            description: Id of parent proxy
+
         responses:
           "200":
             description: Block response
@@ -105,15 +120,21 @@ paths:
           - Block
         summary: Delete a block
         description: Delete a block
-  
+
         parameters:
           - name: id
             in: query
             description: Id of the block
             required: true
             schema:
-              type: string 
-  
+              type: string
+          - in: path
+            name: proxyId
+            schema:
+              type: string
+            required: true
+            description: Id of parent proxy
+
         responses:
           "200":
             description: Block response
@@ -121,20 +142,28 @@ paths:
               application/json:
                 schema:
                   $ref: "#/components/schemas/SuccessResponse"
-      
+
       post:
         tags:
           - Block
         summary: Create a new block
         description: Create a new block
-  
+
+        parameters:
+          - in: path
+            name: proxyId
+            schema:
+              type: string
+            required: true
+            description: Id of parent proxy
+
         requestBody:
           required: true
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NewProxy"
-  
+                $ref: "#/components/schemas/NewBlock"
+
         responses:
           "201":
             description: Block response
@@ -142,57 +171,65 @@ paths:
               application/json:
                 schema:
                   $ref: "#/components/schemas/SuccessResponse"
-       
+
 
 components:
   schemas:
     NewProxy:
       required:
         - source
-        - target 
+        - target
 
       properties:
         source:
-          type: string 
+          type: string
         target:
-          type: string 
+          type: string
 
-    Proxy: 
+    Proxy:
       properties:
         id:
-          type: string 
+          type: string
         createdAt:
           type: string
           format: date-time
         source:
-          type: string 
+          type: string
         target:
           type: string
 
     Activity:
       properties:
         id:
-          type: string 
+          type: string
         createdAt:
           type: string
           format: date-time
         proxyId:
-          type: string 
+          type: string
         ip:
-          type: string  
+          type: string
+
+    NewBlock:
+      required:
+        - ip
+
+      properties:
+        ip:
+          type: string
 
     Block:
       properties:
         id:
-          type: string 
+          type: string
         createdAt:
           type: string
           format: date-time
         proxyId:
-          type: string 
+          type: string
         ip:
           type: string
-    
+
     SuccessResponse:
       required:
         - message

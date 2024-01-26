@@ -1,11 +1,12 @@
 import { Button, Modal, Popconfirm, Space, Table } from 'antd';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Page from './Page';
 import SimpleForm from '../components/SimpleForm';
-import { deleteApiProxy, postApiProxy, useGetApiProxy } from '../proxy/proxy';
+import { deleteApiBlockProxyId, postApiBlockProxyId, useGetApiBlockProxyId } from '../block/block';
 
-const ProxyPage: React.FC = () => {
+const BlockPage: React.FC = () => {
+	const { proxyId } = useParams();
 	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	const showModal = () => {
@@ -16,18 +17,17 @@ const ProxyPage: React.FC = () => {
 		setIsModalOpen(false);
 	};
 
-	const { data, isLoading, refetch } = useGetApiProxy();
+	const { data, isLoading, refetch } = useGetApiBlockProxyId(proxyId ?? 'error');
 
-	const onDelete = async (id: string) => {
-		await deleteApiProxy({ id });
-		refetch();
-	};
-
-	const onCreate = async (values: { source: string; target: string }) => {
-		await postApiProxy({ source: values.source, target: values.target });
-
+	const onCreate = async (values: { ip: string }) => {
+		await postApiBlockProxyId(proxyId ?? 'error', { ip: values.ip });
 		refetch();
 		handleCancel();
+	};
+
+	const onDelete = async (id: string) => {
+		await deleteApiBlockProxyId(proxyId ?? 'error', { id });
+		refetch();
 	};
 
 	const columns = [
@@ -37,14 +37,14 @@ const ProxyPage: React.FC = () => {
 			key: 'id',
 		},
 		{
-			title: 'Source',
-			dataIndex: 'source',
-			key: 'source',
+			title: 'createdAt',
+			dataIndex: 'createdAt',
+			key: 'createdAt',
 		},
 		{
-			title: 'Target',
-			dataIndex: 'target',
-			key: 'target',
+			title: 'Ip',
+			dataIndex: 'ip',
+			key: 'ip',
 		},
 		{
 			title: 'Actions',
@@ -62,12 +62,6 @@ const ProxyPage: React.FC = () => {
 							Delete
 						</Button>
 					</Popconfirm>
-					<Link to={`/app/activity/${record.id}`}>
-						<Button type="primary">Activity</Button>
-					</Link>
-					<Link to={`/app/block/${record.id}`}>
-						<Button type="primary">Block</Button>
-					</Link>
 				</Space>
 			),
 		},
@@ -77,17 +71,14 @@ const ProxyPage: React.FC = () => {
 		// <BasicTransition>
 		<Page>
 			<Button type="primary" onClick={showModal}>
-				New Proxy
+				New Block
 			</Button>
 			<br />
 			<br />
 			<Modal footer={null} title="Basic Modal" open={isModalOpen} onCancel={handleCancel}>
 				<SimpleForm
 					submitButtonTitle="Create"
-					fields={[
-						{ key: 'source', type: 'string', label: 'Source', rules: [{ required: true }] },
-						{ key: 'target', type: 'string', label: 'Target', rules: [{ required: true }] },
-					]}
+					fields={[{ key: 'ip', type: 'string', label: 'Ip', rules: [{ required: true }] }]}
 					onFinish={onCreate}
 				/>
 			</Modal>
@@ -97,4 +88,4 @@ const ProxyPage: React.FC = () => {
 	);
 };
 
-export default ProxyPage;
+export default BlockPage;

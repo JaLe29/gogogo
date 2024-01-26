@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 // import styled from 'styled-components';
-import styled from 'styled-components'; 
+import styled from 'styled-components';
 
 const PageStyled = styled.div<{ $width?: string }>`
 	width: ${({ $width }) => $width || 'initial'};
 	padding-top: 2em;
 	padding: 2em;
-	background: #f5f5f5; 
+	background: #f5f5f5;
 `;
 
 const Loader = styled.div`
@@ -32,11 +32,7 @@ interface Props {
 
 const Page: React.FC<Props> = ({ children, loading, width }) => {
 	if (loading) {
-		return (
-			<Loader>
-				LOADING
-			</Loader>
-		);
+		return <Loader>LOADING</Loader>;
 	}
 
 	return <PageStyled $width={width}>{children}</PageStyled>;

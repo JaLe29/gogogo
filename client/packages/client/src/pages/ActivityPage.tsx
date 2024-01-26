@@ -1,33 +1,12 @@
-import { Button, Modal, Space, Table } from 'antd';
-import { useState } from 'react';
+import { Table } from 'antd';
+import { useParams } from 'react-router-dom';
 import Page from './Page';
-import SimpleForm from '../components/SimpleForm';
-import { deleteApiProxy, postApiProxy, useGetApiProxy } from '../proxy/proxy';
+import { useGetApiActivityProxyId } from '../activity/activity';
 
 const ActivityPage: React.FC = () => {
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const { proxyId } = useParams();
 
-	const showModal = () => {
-		setIsModalOpen(true);
-	};
-
-	const handleCancel = () => {
-		setIsModalOpen(false);
-	};
-
-	const { data, isLoading, refetch } = useGetApiProxy();
-
-	const onDelete = async (id: string) => {
-		await deleteApiProxy({ id });
-		refetch();
-	};
-
-	const onCreate = async (values: { source: string; target: string }) => {
-		await postApiProxy({ source: values.source, target: values.target });
-
-		refetch();
-		handleCancel();
-	};
+	const { data, isLoading } = useGetApiActivityProxyId(proxyId ?? 'error');
 
 	const columns = [
 		{
@@ -36,44 +15,20 @@ const ActivityPage: React.FC = () => {
 			key: 'id',
 		},
 		{
-			title: 'Source',
-			dataIndex: 'source',
-			key: 'source',
+			title: 'createdAt',
+			dataIndex: 'createdAt',
+			key: 'createdAt',
 		},
 		{
-			title: 'Target',
-			dataIndex: 'target',
-			key: 'target',
-		},
-		{
-			title: 'Actions',
-			key: 'actions',
-			render: (text: any, record: any) => (
-				<Space size="middle">
-					<Button type="primary" danger onClick={() => onDelete(record.id)}>
-						Delete
-					</Button>
-				</Space>
-			),
+			title: 'Ip',
+			dataIndex: 'ip',
+			key: 'ip',
 		},
 	];
 
 	return (
 		// <BasicTransition>
 		<Page>
-			<Button type="primary" onClick={showModal}>
-				Open Modal
-			</Button>
-			<Modal footer={null} title="Basic Modal" open={isModalOpen} onCancel={handleCancel}>
-				<SimpleForm
-					submitButtonTitle="Create"
-					fields={[
-						{ key: 'source', type: 'string', label: 'Source', rules: [{ required: true }] },
-						{ key: 'target', type: 'string', label: 'Target', rules: [{ required: true }] },
-					]}
-					onFinish={onCreate}
-				/>
-			</Modal>
 			<Table dataSource={data?.data} columns={columns} loading={isLoading} />
 		</Page>
 		// </BasicTransition >

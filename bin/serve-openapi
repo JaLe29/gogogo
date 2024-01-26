@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# set -x
-
-ROOT_DIR="$( cd "$( dirname "$0" )/.." && pwd )"
-
-swagger serve --no-open ./api.json

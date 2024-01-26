@@ -29,51 +29,51 @@ import type {
  * Get all activities
  * @summary Get all activities
  */
-export const getApiActivity = (
-     options?: AxiosRequestConfig
+export const getApiActivityProxyId = (
+    proxyId: string, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<Activity[]>> => {
     
     return axios.get(
-      `/api/activity`,options
+      `/api/activity/${proxyId}`,options
     );
   }
 
 
-export const getGetApiActivityQueryKey = () => {
-    return [`/api/activity`] as const;
+export const getGetApiActivityProxyIdQueryKey = (proxyId: string,) => {
+    return [`/api/activity/${proxyId}`] as const;
     }
 
     
-export const getGetApiActivityQueryOptions = <TData = Awaited<ReturnType<typeof getApiActivity>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivity>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getGetApiActivityProxyIdQueryOptions = <TData = Awaited<ReturnType<typeof getApiActivityProxyId>>, TError = AxiosError<unknown>>(proxyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyId>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetApiActivityQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetApiActivityProxyIdQueryKey(proxyId);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiActivity>>> = ({ signal }) => getApiActivity({ signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiActivityProxyId>>> = ({ signal }) => getApiActivityProxyId(proxyId, { signal, ...axiosOptions });
 
       
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiActivity>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: !!(proxyId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyId>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetApiActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getApiActivity>>>
-export type GetApiActivityQueryError = AxiosError<unknown>
+export type GetApiActivityProxyIdQueryResult = NonNullable<Awaited<ReturnType<typeof getApiActivityProxyId>>>
+export type GetApiActivityProxyIdQueryError = AxiosError<unknown>
 
 /**
  * @summary Get all activities
  */
-export const useGetApiActivity = <TData = Awaited<ReturnType<typeof getApiActivity>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivity>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const useGetApiActivityProxyId = <TData = Awaited<ReturnType<typeof getApiActivityProxyId>>, TError = AxiosError<unknown>>(
+ proxyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyId>>, TError, TData>>, axios?: AxiosRequestConfig}
 
   ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
-  const queryOptions = getGetApiActivityQueryOptions(options)
+  const queryOptions = getGetApiActivityProxyIdQueryOptions(proxyId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

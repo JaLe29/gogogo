@@ -26,16 +26,65 @@ type OpenApiServer struct {
 	container container.AppContainer
 }
 
+// DeleteApiBlockProxyId implements openapi.ServerInterface.
+func (aps *OpenApiServer) DeleteApiBlockProxyId(c *gin.Context, proxyId string, params openapi.DeleteApiBlockProxyIdParams) {
+	aps.container.PrismaClient.Block.FindUnique(db.Block.ID.Equals(params.Id)).Delete().Exec(aps.container.Context)
+
+	aps.container.RefetchBlockMap()
+
+	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
+}
+
+// GetApiBlockProxyId implements openapi.ServerInterface.
+func (aps *OpenApiServer) GetApiBlockProxyId(c *gin.Context, proxyId string) {
+	res, _ := aps.container.PrismaClient.Block.FindMany(db.Block.ProxyID.Equals(proxyId)).Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, res)
+}
+
+// PostApiBlockProxyId implements openapi.ServerInterface.
+func (aps *OpenApiServer) PostApiBlockProxyId(c *gin.Context, proxyId string) {
+	type Block struct {
+		Ip string `json:"ip" validate:"nonzero"`
+	}
+
+	var b Block
+	if err := c.ShouldBindJSON(&b); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	aps.container.PrismaClient.Block.CreateOne(
+		db.Block.IP.Set(b.Ip),
+		db.Block.ProxyID.Set(proxyId),
+	).Exec(aps.container.Context)
+
+	aps.container.RefetchBlockMap()
+
+	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
+}
+
+// GetApiBlock implements openapi.ServerInterface.
+func (aps *OpenApiServer) GetApiBlock(c *gin.Context) {
+	res, _ := aps.container.PrismaClient.Block.FindMany().Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, res)
+}
+
 // DeleteProxy implements openapi.ServerInterface.
 func (aps *OpenApiServer) DeleteApiProxy(c *gin.Context, params openapi.DeleteApiProxyParams) {
 	aps.container.PrismaClient.Proxy.FindUnique(db.Proxy.ID.Equals(params.Id)).Delete().Exec(aps.container.Context)
+
+	aps.container.RefetchDomainMap()
 
 	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
 }
 
 // GetActivity implements openapi.ServerInterface.
-func (aps *OpenApiServer) GetApiActivity(c *gin.Context) {
-	res, _ := aps.container.PrismaClient.Activity.FindMany().Exec(aps.container.Context)
+func (aps *OpenApiServer) GetApiActivityProxyId(c *gin.Context, proxyId string) {
+	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId)).Exec(aps.container.Context)
 
 	c.JSON(http.StatusOK, res)
 }
@@ -93,7 +142,6 @@ func main() {
 	godotenv.Load()
 
 	c := container.InitContainer()
-	c.RefetchDomainMap()
 
 	go startProxy(c)
 	startGin(c)
@@ -104,18 +152,21 @@ func startProxy(container container.AppContainer) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println((*container.DomainMap))
 		if proxyObj, ok := (*container.DomainMap)[r.Host]; ok {
-			// clientIp := utils.ReadUserIP(r)
+			clientIp := utils.ReadUserIP(r)
+
+			if (*container.BlockMap)[proxyObj.Id] != nil && (*container.BlockMap)[proxyObj.Id][clientIp] {
+				log.Println("Blocked " + clientIp)
+				w.WriteHeader(http.StatusForbidden)
+				w.Write([]byte("403 - Forbidden!"))
+				return
+			}
 
 			proxy := httputil.NewSingleHostReverseProxy(&url.URL{Scheme: "http", Host: proxyObj.TargetProxy})
-			// if clientCounterMap[target] == nil {
-			// 	clientCounterMap[target] = map[string]int32{}
-			// }
-			// clientCounterMap[target][clientIp]++
 
 			proxy.ServeHTTP(w, r)
 
 			container.PrismaClient.Activity.CreateOne(
-				db.Activity.IP.Set(utils.ReadUserIP(r)),
+				db.Activity.IP.Set(clientIp),
 				db.Activity.ProxyID.Set(proxyObj.Id),
 			).Exec(container.Context)
 
@@ -127,11 +178,6 @@ func startProxy(container container.AppContainer) {
 	})
 
 	router.AddRoute("/_system/health", container, router.RouterMap{Get: router.HealthHandler})
-	// router.AddRoute("/_system/proxy", container, router.RouterMap{
-	// 	Get:    router.GetProxy,
-	// 	Post:   router.PostProxy,
-	// 	Delete: router.DeleteProxy,
-	// })
 
 	log.Println("--------------------------------- Proxy server started on port 8080")
 	http.ListenAndServe(":8080", nil)

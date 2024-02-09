@@ -1,15 +1,5 @@
-
 import Page from './Page';
 
-
-const HomePage: React.FC = () => {
-	return (
-		// <BasicTransition>
-		<Page>
-			home page
-		</Page>
-		// </BasicTransition >
-	);
-};
+const HomePage: React.FC = () => <Page>home page</Page>;
 
 export default HomePage;

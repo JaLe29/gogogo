@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Drawer, Layout } from 'antd';
-import { Outlet, useNavigate } from 'react-router-dom'; 
-import { useSwipeable } from 'react-swipeable';
+import { Button, Layout } from 'antd';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { RollbackOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import Header from './Header';
@@ -96,7 +95,7 @@ const InAppLayout: React.FC = () => {
 				<Button icon={<RollbackOutlined />} shape="circle" size="large" type="primary" />
 			</StyledSwipeButton>
 			<ShadowSwipeArea $opacity={swipePoint} />
-			<Layout style={{ height: '100vh' }}  >
+			<Layout style={{ height: '100vh' }}>
 				<Header />
 				<Layout>
 					<Sidebar />

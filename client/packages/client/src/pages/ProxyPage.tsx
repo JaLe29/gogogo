@@ -104,7 +104,6 @@ const ProxyPage: React.FC = () => {
 	];
 
 	return (
-		// <BasicTransition>
 		<Page>
 			<Button type="primary" onClick={showModal}>
 				New Proxy
@@ -128,7 +127,6 @@ const ProxyPage: React.FC = () => {
 				rowClassName={(record: Proxy) => (record.disable ? 'disabled-row' : '')}
 			/>
 		</Page>
-		// </BasicTransition >
 	);
 };
 

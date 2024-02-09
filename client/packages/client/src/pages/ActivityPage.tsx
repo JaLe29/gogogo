@@ -27,11 +27,9 @@ const ActivityPage: React.FC = () => {
 	];
 
 	return (
-		// <BasicTransition>
 		<Page>
 			<Table dataSource={data?.data} columns={columns} loading={isLoading} />
 		</Page>
-		// </BasicTransition >
 	);
 };
 

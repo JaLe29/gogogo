@@ -68,7 +68,6 @@ const AllowPage: React.FC = () => {
 	];
 
 	return (
-		// <BasicTransition>
 		<Page>
 			<Button type="primary" onClick={showModal}>
 				New Allow
@@ -84,7 +83,6 @@ const AllowPage: React.FC = () => {
 			</Modal>
 			<Table dataSource={data?.data} columns={columns} loading={isLoading} />
 		</Page>
-		// </BasicTransition >
 	);
 };
 

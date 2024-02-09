@@ -1,13 +1,12 @@
 import { ProfileOutlined } from '@ant-design/icons';
 import { Button, Layout } from 'antd';
-import React from 'react';
-import { isMobile } from 'react-device-detect';
+import React from 'react'; 
 import { Link, useLocation } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 // import { ROUTES } from '../const/routes';
 // import { useUserFeatureFlags } from '../hooks/useUserFeatureFlags';
 
-const ROUTES = { APP: { PROXY: '/app/proxy', ACTIVITY: '/app/activity' } };
+const ROUTES = { APP: { PROXY: '/proxy' } };
 
 const { Sider: AntdSidebar } = Layout;
 
@@ -37,7 +36,7 @@ const SideBar: React.FC = () => {
 
 	return (
 		<>
-			<StyledAntdSidebar width={176} collapsible={isMobile}>
+			<StyledAntdSidebar width={176} collapsible={false}>
 				<div style={{ display: 'relative', padding: '20px' }}>
 					<div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
 						<Link to={ROUTES.APP.PROXY}>

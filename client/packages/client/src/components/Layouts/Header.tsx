@@ -57,7 +57,7 @@ const Header: React.FC<Props> = ({ isLoginFlow }) => (
 	<StyledAntdHeader>
 		<StyledLogoWrapper>
 			<StyledLogo>
-				<Link to="/app">
+				<Link to="/">
 					Logo
 				</Link>
 			</StyledLogo> 

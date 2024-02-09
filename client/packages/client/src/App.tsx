@@ -5,13 +5,12 @@ import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements } 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import axios from 'axios';
 import InAppLayout from './components/Layouts/InAppLayout';
-import OutAppLayout from './components/Layouts/OutAppLayout';
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
 import ProxyPage from './pages/ProxyPage';
 import { BASE_URL } from './const/client';
 import ActivityPage from './pages/ActivityPage';
 import BlockPage from './pages/BlockPage';
+import AllowPage from './pages/AllowPage';
 
 axios.defaults.baseURL = BASE_URL;
 const queryClient = new QueryClient();
@@ -20,14 +19,12 @@ const App: React.FC = () => {
 	const router = createBrowserRouter(
 		createRoutesFromElements(
 			<>
-				<Route element={<InAppLayout />} path="/app">
+				<Route element={<InAppLayout />} path="/">
 					<Route path="" Component={HomePage} />
 					<Route path="proxy" Component={ProxyPage} />
 					<Route path="activity/:proxyId" Component={ActivityPage} />
 					<Route path="block/:proxyId" Component={BlockPage} />
-				</Route>
-				<Route element={<OutAppLayout />} path="/">
-					<Route path="" Component={LoginPage} />
+					<Route path="allow/:proxyId" Component={AllowPage} />
 				</Route>
 			</>,
 		),

@@ -171,6 +171,89 @@ paths:
               application/json:
                 schema:
                   $ref: "#/components/schemas/SuccessResponse"
+                  
+  /api/allow/{proxyId}:
+
+      get:
+        tags:
+          - Allow
+        summary: Get all allows
+        description: Get all allows
+
+        parameters:
+          - in: path
+            name: proxyId
+            schema:
+              type: string
+            required: true
+            description: Id of parent proxy
+
+        responses:
+          "200":
+            description: Allow response
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Allow"
+      delete:
+        tags:
+          - Allow
+        summary: Delete a allow
+        description: Delete a allow
+
+        parameters:
+          - name: id
+            in: query
+            description: Id of the allow
+            required: true
+            schema:
+              type: string
+          - in: path
+            name: proxyId
+            schema:
+              type: string
+            required: true
+            description: Id of parent proxy
+
+        responses:
+          "200":
+            description: Allow response
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/SuccessResponse"
+
+      post:
+        tags:
+          - Allow
+        summary: Create a new allow
+        description: Create a new allow
+
+        parameters:
+          - in: path
+            name: proxyId
+            schema:
+              type: string
+            required: true
+            description: Id of parent proxy
+
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewAllow"
+
+        responses:
+          "201":
+            description: Allow response
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/SuccessResponse"
+
 
 
 components:
@@ -219,6 +302,26 @@ components:
           type: string
 
     Block:
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        proxyId:
+          type: string
+        ip:
+          type: string   
+
+    NewAllow:
+      required:
+        - ip
+
+      properties:
+        ip:
+          type: string
+    
+    Allow:
       properties:
         id:
           type: string

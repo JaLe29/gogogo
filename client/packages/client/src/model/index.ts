@@ -6,11 +6,14 @@
  */
 
 export * from './activity';
+export * from './allow';
 export * from './block';
+export * from './deleteApiAllowProxyIdParams';
 export * from './deleteApiBlockParams';
 export * from './deleteApiBlockProxyIdParams';
 export * from './deleteApiProxyParams';
 export * from './deleteProxyParams';
+export * from './newAllow';
 export * from './newBlock';
 export * from './newProxy';
 export * from './proxy';

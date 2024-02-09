@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Drawer, Layout } from 'antd';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { isMobile, MobileView } from 'react-device-detect';
+import { Outlet, useNavigate } from 'react-router-dom'; 
 import { useSwipeable } from 'react-swipeable';
 import { RollbackOutlined } from '@ant-design/icons';
 import styled from 'styled-components';

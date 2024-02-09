@@ -4,30 +4,22 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
-    "@apollo/client": "^3.8.9",
     "@tanstack/react-query": "^5.17.15",
     "antd": "^5.12.8",
     "axios": "^1.6.5",
-    "axios-hooks": "^5.0.2",
     "dayjs": "^1.11.10",
     "immer": "^10.0.3",
     "lodash": "^4.17.21",
-    "orval": "^6.23.0",
-    "rc-scrollbars": "^1.1.6",
     "react": "^18.2.0",
-    "react-device-detect": "^2.2.3",
     "react-dom": "^18.2.0",
-    "react-highlight-words": "^0.20.0",
     "react-router-dom": "^6.21.2",
     "react-router-prompt": "^0.6.1",
     "react-swipeable": "^7.0.1",
     "styled-components": "^6.1.8",
-    "use-debounce": "^10.0.0",
     "uuid": "^9.0.1",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@trpc/server": "^10.45.0",
     "@types/lodash": "^4.14.202",
     "@types/node": "^18.19.4",
     "@types/react": "^18.2.47",
@@ -35,7 +27,6 @@
     "@types/uuid": "^9.0.7",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.56.0",
-    "gql-generator-node": "^2.1.16",
     "orval": "^6.23.0",
     "typescript": "~5.3.3",
     "vite": "^5.0.11",
@@ -47,7 +38,7 @@
     "gen": "orval",
     "start": "node scripts/start.js",
     "dev": "vite dev",
-    "build": "vite build --mode release"
+    "build": "rm -rf ./dist && vite build --mode release"
   },
   "browserslist": {
     "production": [

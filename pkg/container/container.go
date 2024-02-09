@@ -2,6 +2,7 @@ package container
 
 import (
 	db "bastard-proxy/db"
+	"bastard-proxy/pkg/logger"
 	"context"
 	"log"
 	"os"
@@ -17,12 +18,17 @@ type Domain struct {
 }
 
 type AppContainer struct {
-	Context          context.Context
-	PrismaClient     *db.PrismaClient
-	DomainMap        *map[string]Domain
-	BlockMap         *map[string]map[string]bool
+	Context      context.Context
+	PrismaClient *db.PrismaClient
+
+	DomainMap *map[string]Domain
+	BlockMap  *map[string]map[string]bool
+	AllowMap  *map[string]map[string]bool
+
 	RefetchDomainMap func()
 	RefetchBlockMap  func()
+
+	Logger logger.Logger
 }
 
 func InitContainer() AppContainer {
@@ -34,6 +40,7 @@ func InitContainer() AppContainer {
 	context := context.Background()
 	dm := &map[string]Domain{}
 	bm := &map[string]map[string]bool{}
+	am := &map[string]map[string]bool{}
 
 	refetchDomainMap := func() {
 		clear(*dm)
@@ -50,12 +57,15 @@ func InitContainer() AppContainer {
 		}
 
 		adminDomain := os.Getenv("ADMIN_DOMAIN")
-		adminTarget := "localhost:5000"
-		(*dm)[adminDomain] = Domain{
-			Id:          "",
-			TargetProxy: adminTarget,
+		if adminDomain != "" {
+			adminTarget := "localhost:5000"
+			(*dm)[adminDomain] = Domain{
+				Id:          "",
+				TargetProxy: adminTarget,
+			}
+			log.Println("Proxying " + adminDomain + " to " + adminTarget)
 		}
-		log.Println("Proxying " + adminDomain + " to " + adminTarget)
+
 	}
 
 	refetchBlockMap := func() {
@@ -75,6 +85,22 @@ func InitContainer() AppContainer {
 		}
 	}
 
+	refetchAllowMap := func() {
+		clear(*am)
+		log.Println("Refetching allow map")
+		res, _ := client.Allow.FindMany().Exec(context)
+		for _, allow := range res {
+			proxyId, _ := allow.ProxyID()
+
+			if _, ok := (*am)[proxyId]; !ok {
+				(*am)[proxyId] = make(map[string]bool)
+			}
+
+			(*am)[proxyId][allow.IP] = true
+			log.Println("Allowing " + proxyId + ", " + allow.IP)
+		}
+	}
+
 	fireInitialRefetch := func() {
 		ticker := time.NewTicker(60 * time.Second)
 		quit := make(chan struct{})
@@ -84,6 +110,7 @@ func InitContainer() AppContainer {
 				case <-ticker.C:
 					refetchDomainMap()
 					refetchBlockMap()
+					refetchAllowMap()
 				case <-quit:
 					ticker.Stop()
 					return
@@ -94,6 +121,7 @@ func InitContainer() AppContainer {
 
 	refetchDomainMap()
 	refetchBlockMap()
+	refetchAllowMap()
 
 	fireInitialRefetch()
 
@@ -127,15 +155,32 @@ func InitContainer() AppContainer {
 		}
 	}
 
+	startWatchAllow := func() {
+		changeStream, err := mongoClient.Database("bastard-proxy").Collection("Allow").Watch(context, mongo.Pipeline{}, options.ChangeStream())
+		if err != nil {
+			panic(err)
+		}
+
+		for changeStream.Next(context) {
+			// fmt.Println(changeStream.Current)
+			refetchAllowMap()
+		}
+	}
+
 	go startWatchBlock()
 	go startWatchProxy()
+	go startWatchAllow()
+
+	logger := logger.New()
 
 	return AppContainer{
 		Context:          context,
 		PrismaClient:     client,
 		DomainMap:        dm,
+		BlockMap:         bm,
+		AllowMap:         am,
 		RefetchDomainMap: refetchDomainMap,
 		RefetchBlockMap:  refetchBlockMap,
-		BlockMap:         bm,
+		Logger:           logger,
 	}
 }

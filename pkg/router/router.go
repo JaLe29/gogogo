@@ -4,6 +4,7 @@ import (
 	"bastard-proxy/db"
 	container "bastard-proxy/pkg/container"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +28,7 @@ func AddRoute(path string, c container.AppContainer, routerMap RouterMap) {
 	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Add("Access-Control-Allow-Methods", "GET, PATCH, POST, DELETE, OPTIONS")
 
 		if routerMap.Get != nil && (*r).Method == "GET" {
 			(routerMap.Get)(c, w, r)
@@ -79,7 +80,7 @@ func InitRouter(c container.AppContainer) {
 
 	ginRouter.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"POST", "PUT", "GET", "OPTIONS", "DELETE"},
+		AllowMethods:     []string{"POST", "PUT", "GET", "OPTIONS", "DELETE", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "access-control-allow-origin", "access-control-allow-headers"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -109,6 +110,28 @@ func InitRouter(c container.AppContainer) {
 
 type OpenApiServer struct {
 	container container.AppContainer
+}
+
+// PatchApiProxy implements openapi.ServerInterface.
+func (aps *OpenApiServer) PatchApiProxy(c *gin.Context, params openapi.PatchApiProxyParams) {
+	type Proxy struct {
+		Disable bool `json:"disable" validate:"nonzero"`
+	}
+
+	var d Proxy
+	if err := c.ShouldBindJSON(&d); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	fmt.Println(d)
+	fmt.Println(params.Id)
+	aps.container.PrismaClient.Proxy.FindUnique(db.Proxy.ID.Equals(params.Id)).Update(
+		db.Proxy.Disable.Set(d.Disable),
+	).Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
 }
 
 // DeleteApiAllowProxyId implements openapi.ServerInterface.
@@ -216,7 +239,7 @@ func (aps *OpenApiServer) GetApiActivityProxyId(c *gin.Context, proxyId string) 
 
 func (aps *OpenApiServer) GetApiProxy(c *gin.Context) {
 	res, _ := aps.container.PrismaClient.Proxy.FindMany().Exec(aps.container.Context)
-
+	fmt.Println(res)
 	c.JSON(http.StatusOK, res)
 }
 
@@ -237,6 +260,7 @@ func (aps *OpenApiServer) PostApiProxy(c *gin.Context) {
 	res, _ := aps.container.PrismaClient.Proxy.CreateOne(
 		db.Proxy.Source.Set(p.Source),
 		db.Proxy.Target.Set(p.Target),
+		db.Proxy.Disable.Set(false),
 	).Exec(aps.container.Context)
 
 	aps.container.RefetchDomainMap()

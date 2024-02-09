@@ -5,10 +5,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface Proxy {
-  createdAt: string;
-  disable: boolean;
-  id: string;
-  source: string;
-  target: string;
-}
+export type PatchApiProxyParams = {
+/**
+ * Id of the proxy
+ */
+id: string;
+};

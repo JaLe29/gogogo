@@ -30,8 +30,9 @@ func startProxy(container container.AppContainer) {
 			clientIp := utils.ReadUserIP(r)
 
 			hasAllowMap := (*container.AllowMap)[proxyObj.Id] != nil
+			isDisabled := proxyObj.Disable
 
-			if hasAllowMap && !(*container.AllowMap)[proxyObj.Id][clientIp] {
+			if (hasAllowMap && !(*container.AllowMap)[proxyObj.Id][clientIp]) || isDisabled {
 				w.WriteHeader(http.StatusForbidden)
 				w.Write([]byte("403 - Forbidden!"))
 				return

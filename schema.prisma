@@ -15,6 +15,7 @@ model Proxy {
   // ----------------------------------------------
   source    String
   target    String
+  disable   Boolean
 
   // Relation to Activity
   activities Activity[]

@@ -6,6 +6,34 @@ info:
 paths:
   /api/proxy:
 
+    patch:
+      tags:
+        - Proxy
+      summary: Update a proxy
+      description: Update a proxy
+
+      parameters:
+        - name: id
+          in: query
+          description: Id of the proxy
+          required: true
+          schema:
+            type: string
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchProxy"
+
+      responses:
+        "200":
+          description: Proxy response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
     post:
       tags:
         - Proxy
@@ -171,7 +199,7 @@ paths:
               application/json:
                 schema:
                   $ref: "#/components/schemas/SuccessResponse"
-                  
+
   /api/allow/{proxyId}:
 
       get:
@@ -269,7 +297,18 @@ components:
         target:
           type: string
 
+    PatchProxy:
+      properties:
+        disable:
+          type: boolean
+
     Proxy:
+      required:
+        - id
+        - createdAt
+        - source
+        - target
+        - disable
       properties:
         id:
           type: string
@@ -280,6 +319,8 @@ components:
           type: string
         target:
           type: string
+        disable:
+          type: boolean
 
     Activity:
       properties:
@@ -311,7 +352,7 @@ components:
         proxyId:
           type: string
         ip:
-          type: string   
+          type: string
 
     NewAllow:
       required:
@@ -320,7 +361,7 @@ components:
       properties:
         ip:
           type: string
-    
+
     Allow:
       properties:
         id:

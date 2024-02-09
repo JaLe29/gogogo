@@ -16,5 +16,7 @@ export * from './deleteProxyParams';
 export * from './newAllow';
 export * from './newBlock';
 export * from './newProxy';
+export * from './patchApiProxyParams';
+export * from './patchProxy';
 export * from './proxy';
 export * from './successResponse';

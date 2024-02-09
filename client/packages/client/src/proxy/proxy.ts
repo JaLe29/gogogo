@@ -29,6 +29,12 @@ import type {
   NewProxy
 } from '../model/newProxy'
 import type {
+  PatchApiProxyParams
+} from '../model/patchApiProxyParams'
+import type {
+  PatchProxy
+} from '../model/patchProxy'
+import type {
   Proxy
 } from '../model/proxy'
 import type {
@@ -38,6 +44,59 @@ import type {
 
 
 /**
+ * Update a proxy
+ * @summary Update a proxy
+ */
+export const patchApiProxy = (
+    patchProxy: PatchProxy,
+    params: PatchApiProxyParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<SuccessResponse>> => {
+    
+    return axios.patch(
+      `/api/proxy`,
+      patchProxy,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+export const getPatchApiProxyMutationOptions = <TError = AxiosError<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiProxy>>, TError,{data: PatchProxy;params: PatchApiProxyParams}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof patchApiProxy>>, TError,{data: PatchProxy;params: PatchApiProxyParams}, TContext> => {
+ const {mutation: mutationOptions, axios: axiosOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchApiProxy>>, {data: PatchProxy;params: PatchApiProxyParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  patchApiProxy(data,params,axiosOptions)
+        }
+
+        
+
+
+   return  { mutationFn, ...mutationOptions }}
+
+    export type PatchApiProxyMutationResult = NonNullable<Awaited<ReturnType<typeof patchApiProxy>>>
+    export type PatchApiProxyMutationBody = PatchProxy
+    export type PatchApiProxyMutationError = AxiosError<unknown>
+
+    /**
+ * @summary Update a proxy
+ */
+export const usePatchApiProxy = <TError = AxiosError<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiProxy>>, TError,{data: PatchProxy;params: PatchApiProxyParams}, TContext>, axios?: AxiosRequestConfig}
+) => {
+
+      const mutationOptions = getPatchApiProxyMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
  * Create a new proxy
  * @summary Create a new proxy
  */

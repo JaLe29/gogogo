@@ -1,9 +1,18 @@
-import { Button, Modal, Popconfirm, Space, Table } from 'antd';
+import { Button, Modal, Popconfirm, Space, Table, Tooltip } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+	DeleteOutlined,
+	LineChartOutlined,
+	LockOutlined,
+	PauseCircleOutlined,
+	PlayCircleOutlined,
+	UnlockOutlined,
+} from '@ant-design/icons';
 import Page from './Page';
 import SimpleForm from '../components/SimpleForm';
-import { deleteApiProxy, postApiProxy, useGetApiProxy } from '../proxy/proxy';
+import { deleteApiProxy, patchApiProxy, postApiProxy, useGetApiProxy } from '../proxy/proxy';
+import { Proxy } from '../model/index';
 
 const ProxyPage: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +39,11 @@ const ProxyPage: React.FC = () => {
 		handleCancel();
 	};
 
+	const onPatchProxy = async (id: string, disable: boolean) => {
+		await patchApiProxy({ disable }, { id });
+		refetch();
+	};
+
 	const columns = [
 		{
 			title: 'Id',
@@ -49,28 +63,41 @@ const ProxyPage: React.FC = () => {
 		{
 			title: 'Actions',
 			key: 'actions',
-			render: (text: any, record: any) => (
+			render: (text: any, record: Proxy) => (
 				<Space size="middle">
-					<Popconfirm
-						placement="topLeft"
-						title="Are you sure?"
-						okText="Yes"
-						cancelText="No"
-						onConfirm={() => onDelete(record.id)}
-					>
-						<Button type="primary" danger>
-							Delete
-						</Button>
-					</Popconfirm>
-					<Link to={`/activity/${record.id}`}>
-						<Button type="primary">Activity</Button>
-					</Link>
-					<Link to={`/block/${record.id}`}>
-						<Button type="primary">Block</Button>
-					</Link>
-					<Link to={`/allow/${record.id}`}>
-						<Button type="primary">Allow</Button>
-					</Link>
+					<Tooltip title="Activity">
+						<Link to={`/activity/${record.id}`}>
+							<Button type="primary" icon={<LineChartOutlined />} />
+						</Link>
+					</Tooltip>
+					<Tooltip title="Block">
+						<Link to={`/block/${record.id}`}>
+							<Button type="primary" icon={<LockOutlined />} />
+						</Link>
+					</Tooltip>
+					<Tooltip title="Allow">
+						<Link to={`/allow/${record.id}`}>
+							<Button type="primary" icon={<UnlockOutlined />} />
+						</Link>
+					</Tooltip>
+					<Tooltip title="Pause">
+						<Button
+							onClick={() => onPatchProxy(record.id, !record.disable)}
+							type={record.disable ? 'primary' : 'dashed'}
+							icon={record.disable ? <PlayCircleOutlined /> : <PauseCircleOutlined />}
+						/>
+					</Tooltip>
+					<Tooltip title="Delete">
+						<Popconfirm
+							placement="topLeft"
+							title="Are you sure?"
+							okText="Yes"
+							cancelText="No"
+							onConfirm={() => onDelete(record.id)}
+						>
+							<Button type="primary" danger icon={<DeleteOutlined />} />
+						</Popconfirm>
+					</Tooltip>
 				</Space>
 			),
 		},
@@ -94,7 +121,12 @@ const ProxyPage: React.FC = () => {
 					onFinish={onCreate}
 				/>
 			</Modal>
-			<Table dataSource={data?.data} columns={columns} loading={isLoading} />
+			<Table
+				dataSource={data?.data}
+				columns={columns}
+				loading={isLoading}
+				rowClassName={(record: Proxy) => (record.disable ? 'disabled-row' : '')}
+			/>
 		</Page>
 		// </BasicTransition >
 	);

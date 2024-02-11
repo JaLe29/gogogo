@@ -93,6 +93,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /api/activity/{proxyId}/aggregate/ip:
+    get:
+      tags:
+        - Activity
+      summary: Get all activities aggregated by ip
+      description: Get all activities aggregated by ip
+      parameters:
+        - in: path
+          name: proxyId
+          schema:
+            type: string
+          required: true
+          description: Id of parent proxy
+
+      responses:
+        "200":
+          description: Activity response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityIpAggregate"
+
+  /api/activity/{proxyId}/timeline/ip:
+    get:
+      tags:
+        - Activity
+      summary: Get all activities timeline by ip
+      parameters:
+        - in: path
+          name: proxyId
+          schema:
+            type: string
+          required: true
+          description: Id of parent proxy
+        - in: query
+          name: ip
+          schema:
+            type: string
+          required: true
+          description: Ip to filter
+
+      responses:
+        "200":
+          description: Activity response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityIpTimeline"
+
   /api/activity/{proxyId}:
 
     get:
@@ -298,8 +351,13 @@ components:
           type: string
 
     PatchProxy:
+      required: 
+        - cache
+        - disable
       properties:
         disable:
+          type: boolean
+        cache:
           type: boolean
 
     Proxy:
@@ -309,6 +367,7 @@ components:
         - source
         - target
         - disable
+        - cache
       properties:
         id:
           type: string
@@ -320,6 +379,8 @@ components:
         target:
           type: string
         disable:
+          type: boolean
+        cache:
           type: boolean
 
     Activity:
@@ -333,6 +394,27 @@ components:
           type: string
         ip:
           type: string
+
+    ActivityIpAggregate:
+      required:
+        - ip
+        - type
+      properties:
+        ip:
+          type: string
+        sum:
+          type: number
+
+    ActivityIpTimeline:
+      required:
+        - createdAt
+        - sum
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        sum:
+          type: number
 
     NewBlock:
       required:

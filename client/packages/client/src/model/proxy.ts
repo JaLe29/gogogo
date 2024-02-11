@@ -6,6 +6,7 @@
  */
 
 export interface Proxy {
+  cache: boolean;
   createdAt: string;
   disable: boolean;
   id: string;

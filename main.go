@@ -5,11 +5,16 @@ import (
 	container "bastard-proxy/pkg/container"
 	router "bastard-proxy/pkg/router"
 	"bastard-proxy/pkg/utils"
+	"bytes"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 
+	"github.com/coocood/freecache"
 	"github.com/joho/godotenv"
 )
 
@@ -22,7 +27,46 @@ func main() {
 	router.InitRouter(c)
 }
 
+type transport struct {
+	http.RoundTripper
+	cache *freecache.Cache
+}
+
+func (t *transport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	resp, err = t.RoundTripper.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	b = bytes.Replace(b, []byte("server"), []byte("schmerver"), -1)
+	body := io.NopCloser(bytes.NewReader(b))
+	resp.Body = body
+	resp.ContentLength = int64(len(b))
+
+	header := resp.Header.Get("Ap-Cache-Control")
+	if header != "" {
+		headerIntValue, err := strconv.Atoi(header)
+		if err == nil {
+			fmt.Println("Caching for ", headerIntValue, " seconds", " - ", req.URL.String())
+			t.cache.Set([]byte(req.URL.String()), b, headerIntValue)
+		}
+	}
+
+	resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
+	return resp, nil
+}
+
 func startProxy(container container.AppContainer) {
+	cacheSize := 100 * 1024 * 1024
+	cache := freecache.NewCache(cacheSize)
+
 	container.Logger.Info("Starting proxy server")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +90,25 @@ func startProxy(container container.AppContainer) {
 				}
 			}
 
+			isCacheEnabled := proxyObj.Cache
+
+			if isCacheEnabled {
+				cacheResponse, _ := cache.Get([]byte("http://" + proxyObj.TargetProxy + r.URL.String()))
+				// fmt.Println(cacheResponse)
+				if cacheResponse != nil {
+					// fmt.Println("Cache hit")
+					w.Header().Add("Ap-Cache-Status", "HIT")
+					w.WriteHeader(http.StatusOK)
+					w.Write(cacheResponse)
+					return
+				}
+			}
+
 			proxy := httputil.NewSingleHostReverseProxy(&url.URL{Scheme: "http", Host: proxyObj.TargetProxy})
+
+			if isCacheEnabled {
+				proxy.Transport = &transport{http.DefaultTransport, cache}
+			}
 
 			proxy.ServeHTTP(w, r)
 

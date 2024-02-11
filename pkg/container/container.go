@@ -16,6 +16,7 @@ type Domain struct {
 	Id          string
 	TargetProxy string
 	Disable     bool
+	Cache       bool
 }
 
 type AppContainer struct {
@@ -53,6 +54,7 @@ func InitContainer() AppContainer {
 				Id:          proxy.ID,
 				TargetProxy: proxy.Target,
 				Disable:     proxy.Disable,
+				Cache:       proxy.Cache,
 			}
 
 			log.Println("Proxying " + proxy.Source + " to " + proxy.Target)
@@ -65,6 +67,7 @@ func InitContainer() AppContainer {
 				Id:          "",
 				TargetProxy: adminTarget,
 				Disable:     false,
+				Cache:       false,
 			}
 			log.Println("Proxying " + adminDomain + " to " + adminTarget)
 		}

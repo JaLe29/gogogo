@@ -11,6 +11,7 @@ import { BASE_URL } from './const/client';
 import ActivityPage from './pages/ActivityPage';
 import BlockPage from './pages/BlockPage';
 import AllowPage from './pages/AllowPage';
+import ActivityDetailIpPage from './pages/ActivityDetailIpPage';
 
 axios.defaults.baseURL = BASE_URL;
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App: React.FC = () => {
 					<Route path="" Component={HomePage} />
 					<Route path="proxy" Component={ProxyPage} />
 					<Route path="activity/:proxyId" Component={ActivityPage} />
+					<Route path="activity/:proxyId/:ip" Component={ActivityDetailIpPage} />
 					<Route path="block/:proxyId" Component={BlockPage} />
 					<Route path="allow/:proxyId" Component={AllowPage} />
 				</Route>

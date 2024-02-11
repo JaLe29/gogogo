@@ -22,6 +22,138 @@ import type {
 import type {
   Activity
 } from '../model/activity'
+import type {
+  ActivityIpAggregate
+} from '../model/activityIpAggregate'
+import type {
+  ActivityIpTimeline
+} from '../model/activityIpTimeline'
+import type {
+  GetApiActivityProxyIdTimelineIpParams
+} from '../model/getApiActivityProxyIdTimelineIpParams'
+
+
+
+/**
+ * Get all activities aggregated by ip
+ * @summary Get all activities aggregated by ip
+ */
+export const getApiActivityProxyIdAggregateIp = (
+    proxyId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ActivityIpAggregate[]>> => {
+    
+    return axios.get(
+      `/api/activity/${proxyId}/aggregate/ip`,options
+    );
+  }
+
+
+export const getGetApiActivityProxyIdAggregateIpQueryKey = (proxyId: string,) => {
+    return [`/api/activity/${proxyId}/aggregate/ip`] as const;
+    }
+
+    
+export const getGetApiActivityProxyIdAggregateIpQueryOptions = <TData = Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>, TError = AxiosError<unknown>>(proxyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiActivityProxyIdAggregateIpQueryKey(proxyId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>> = ({ signal }) => getApiActivityProxyIdAggregateIp(proxyId, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(proxyId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetApiActivityProxyIdAggregateIpQueryResult = NonNullable<Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>>
+export type GetApiActivityProxyIdAggregateIpQueryError = AxiosError<unknown>
+
+/**
+ * @summary Get all activities aggregated by ip
+ */
+export const useGetApiActivityProxyIdAggregateIp = <TData = Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>, TError = AxiosError<unknown>>(
+ proxyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyIdAggregateIp>>, TError, TData>>, axios?: AxiosRequestConfig}
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getGetApiActivityProxyIdAggregateIpQueryOptions(proxyId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * @summary Get all activities timeline by ip
+ */
+export const getApiActivityProxyIdTimelineIp = (
+    proxyId: string,
+    params: GetApiActivityProxyIdTimelineIpParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ActivityIpTimeline[]>> => {
+    
+    return axios.get(
+      `/api/activity/${proxyId}/timeline/ip`,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+export const getGetApiActivityProxyIdTimelineIpQueryKey = (proxyId: string,
+    params: GetApiActivityProxyIdTimelineIpParams,) => {
+    return [`/api/activity/${proxyId}/timeline/ip`, ...(params ? [params]: [])] as const;
+    }
+
+    
+export const getGetApiActivityProxyIdTimelineIpQueryOptions = <TData = Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>, TError = AxiosError<unknown>>(proxyId: string,
+    params: GetApiActivityProxyIdTimelineIpParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiActivityProxyIdTimelineIpQueryKey(proxyId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>> = ({ signal }) => getApiActivityProxyIdTimelineIp(proxyId,params, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(proxyId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetApiActivityProxyIdTimelineIpQueryResult = NonNullable<Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>>
+export type GetApiActivityProxyIdTimelineIpQueryError = AxiosError<unknown>
+
+/**
+ * @summary Get all activities timeline by ip
+ */
+export const useGetApiActivityProxyIdTimelineIp = <TData = Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>, TError = AxiosError<unknown>>(
+ proxyId: string,
+    params: GetApiActivityProxyIdTimelineIpParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiActivityProxyIdTimelineIp>>, TError, TData>>, axios?: AxiosRequestConfig}
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getGetApiActivityProxyIdTimelineIpQueryOptions(proxyId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
 
 
 

@@ -6,6 +6,8 @@
  */
 
 export * from './activity';
+export * from './activityIpAggregate';
+export * from './activityIpTimeline';
 export * from './allow';
 export * from './block';
 export * from './deleteApiAllowProxyIdParams';
@@ -13,6 +15,7 @@ export * from './deleteApiBlockParams';
 export * from './deleteApiBlockProxyIdParams';
 export * from './deleteApiProxyParams';
 export * from './deleteProxyParams';
+export * from './getApiActivityProxyIdTimelineIpParams';
 export * from './newAllow';
 export * from './newBlock';
 export * from './newProxy';

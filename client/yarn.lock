@@ -483,23 +483,21 @@ __metadata:
     "@types/node": ^18.19.4
     "@types/react": ^18.2.47
     "@types/react-dom": ^18.2.18
-    "@types/uuid": ^9.0.7
     "@vitejs/plugin-react": ^4.2.1
     antd: ^5.12.8
     axios: ^1.6.5
+    chart.js: ^4.4.1
     dayjs: ^1.11.10
     eslint: ^8.56.0
     immer: ^10.0.3
     lodash: ^4.17.21
     orval: ^6.23.0
     react: ^18.2.0
+    react-chartjs-2: ^5.2.0
     react-dom: ^18.2.0
     react-router-dom: ^6.21.2
-    react-router-prompt: ^0.6.1
-    react-swipeable: ^7.0.1
     styled-components: ^6.1.8
     typescript: ~5.3.3
-    uuid: ^9.0.1
     vite: ^5.0.11
     vite-plugin-checker: ^0.6.2
     zustand: ^4.4.7
@@ -1100,6 +1098,13 @@ __metadata:
   peerDependencies:
     jsep: ^0.4.0||^1.0.0
   checksum: c05408b0302844723f98b90787425beb4e8ad14029df3d98e88b9d61343d81201a7f0bf3db5806dcf0378c7be69f5b4c9fcd04f055bda282c73f4d1b425e502a
+  languageName: node
+  linkType: hard
+
+"@kurkle/color@npm:^0.3.0":
+  version: 0.3.2
+  resolution: "@kurkle/color@npm:0.3.2"
+  checksum: 79e97b31f8f6efb28c69d373f94b0c7480226fe8ec95221f518ac998e156444a496727ce47de6d728eb5c3369288e794cba82cae34253deb0d472d3bfe080e49
   languageName: node
   linkType: hard
 
@@ -1906,13 +1911,6 @@ __metadata:
   version: 1.19.25
   resolution: "@types/urijs@npm:1.19.25"
   checksum: cce3fd2845d5e143f4130134a5f6ff7e02b4dfc05f4d13c7b28a404fd9420bb8a6483a572c0662693bb18c5b3d8f814270aa75f3fd539f32fae22d005e755b5d
-  languageName: node
-  linkType: hard
-
-"@types/uuid@npm:^9.0.7":
-  version: 9.0.7
-  resolution: "@types/uuid@npm:9.0.7"
-  checksum: c7321194aeba9ea173efd1e721403bdf4e7ae6945f8f8cdbc87c791f4b505ccf3dbc4a8883d90b394ef13b7c2dc778045792b05dbb23b3c746f8ea347804d448
   languageName: node
   linkType: hard
 
@@ -2806,6 +2804,15 @@ __metadata:
     ansi-styles: ^4.1.0
     supports-color: ^7.1.0
   checksum: fe75c9d5c76a7a98d45495b91b2172fa3b7a09e0cc9370e5c8feb1c567b85c4288e2b3fded7cfdd7359ac28d6b3844feb8b82b8686842e93d23c827c417e83fc
+  languageName: node
+  linkType: hard
+
+"chart.js@npm:^4.4.1":
+  version: 4.4.1
+  resolution: "chart.js@npm:4.4.1"
+  dependencies:
+    "@kurkle/color": ^0.3.0
+  checksum: 8c108f137824ea0e3d79914708b409298c12ed7d16da99a40ca3cab51466ef7b0068ad82ac0addeb288b938fe0621d3e5a6a913b60e72a729aa42aa96705fcad
   languageName: node
   linkType: hard
 
@@ -6911,6 +6918,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-chartjs-2@npm:^5.2.0":
+  version: 5.2.0
+  resolution: "react-chartjs-2@npm:5.2.0"
+  peerDependencies:
+    chart.js: ^4.1.1
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: ace702185be1450e5888a8bcd8b5fc1995067e3b11d236764a67f5567a3d7c32ff16923b8d48d3d39bda6e45135da6c044c9b43fbe8e1978f95aca9d2c0ce348
+  languageName: node
+  linkType: hard
+
 "react-dom@npm:^18.2.0":
   version: 18.2.0
   resolution: "react-dom@npm:18.2.0"
@@ -6957,17 +6974,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-router-prompt@npm:^0.6.1":
-  version: 0.6.1
-  resolution: "react-router-prompt@npm:0.6.1"
-  peerDependencies:
-    react: ">=16.8"
-    react-dom: ">=16.8"
-    react-router-dom: ">=6.19"
-  checksum: 8d20e8a50e7e0a01d0221f42290e3c62f72f63a32ba0754fa4551412bad4182ce7ce0229c751c619f05791f5542774244695a96388bb51aa21b3f84020edaca7
-  languageName: node
-  linkType: hard
-
 "react-router@npm:6.21.2":
   version: 6.21.2
   resolution: "react-router@npm:6.21.2"
@@ -6976,15 +6982,6 @@ __metadata:
   peerDependencies:
     react: ">=16.8"
   checksum: 8c38a4914892d5b8052bc5c244af95109affd8b74bffa16f9ea7856dc0e992dd8539b19d2618721cd7ef091a585f394fac9d05ab7a98cf3ca6aeb7519b7bce0e
-  languageName: node
-  linkType: hard
-
-"react-swipeable@npm:^7.0.1":
-  version: 7.0.1
-  resolution: "react-swipeable@npm:7.0.1"
-  peerDependencies:
-    react: ^16.8.3 || ^17 || ^18
-  checksum: 1cd19275c5608cb202ca7717afc73e336fb51d6ae4c9353ef409e1779dfb90f36ac4c06aa870d3d862f15fb439f82b96d41395738d04b8d2290aefc670fd6b5b
   languageName: node
   linkType: hard
 
@@ -8181,15 +8178,6 @@ __metadata:
   version: 3.11.0
   resolution: "utility-types@npm:3.11.0"
   checksum: 35a4866927bbea5d037726744028d05c6e37772ded2aabaca21480ce9380185436aef586ead525e327c7f3c640b1a3287769a12ef269c7b165a2ddd50ea6ad61
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^9.0.1":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 39931f6da74e307f51c0fb463dc2462807531dc80760a9bff1e35af4316131b4fc3203d16da60ae33f07fdca5b56f3f1dd662da0c99fea9aaeab2004780cc5f4
   languageName: node
   linkType: hard
 

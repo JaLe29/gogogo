@@ -27,6 +27,18 @@ type Activity struct {
 	ProxyId   *string    `json:"proxyId,omitempty"`
 }
 
+// ActivityIpAggregate defines model for ActivityIpAggregate.
+type ActivityIpAggregate struct {
+	Ip  string   `json:"ip"`
+	Sum *float32 `json:"sum,omitempty"`
+}
+
+// ActivityIpTimeline defines model for ActivityIpTimeline.
+type ActivityIpTimeline struct {
+	CreatedAt time.Time `json:"createdAt"`
+	Sum       float32   `json:"sum"`
+}
+
 // Allow defines model for Allow.
 type Allow struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
@@ -61,11 +73,13 @@ type NewProxy struct {
 
 // PatchProxy defines model for PatchProxy.
 type PatchProxy struct {
-	Disable *bool `json:"disable,omitempty"`
+	Cache   bool `json:"cache"`
+	Disable bool `json:"disable"`
 }
 
 // Proxy defines model for Proxy.
 type Proxy struct {
+	Cache     bool      `json:"cache"`
 	CreatedAt time.Time `json:"createdAt"`
 	Disable   bool      `json:"disable"`
 	Id        string    `json:"id"`
@@ -77,6 +91,12 @@ type Proxy struct {
 type SuccessResponse struct {
 	// Message Message of the response
 	Message string `json:"message"`
+}
+
+// GetApiActivityProxyIdTimelineIpParams defines parameters for GetApiActivityProxyIdTimelineIp.
+type GetApiActivityProxyIdTimelineIpParams struct {
+	// Ip Ip to filter
+	Ip string `form:"ip" json:"ip"`
 }
 
 // DeleteApiAllowProxyIdParams defines parameters for DeleteApiAllowProxyId.
@@ -120,6 +140,12 @@ type ServerInterface interface {
 	// Get all activities
 	// (GET /api/activity/{proxyId})
 	GetApiActivityProxyId(c *gin.Context, proxyId string)
+	// Get all activities aggregated by ip
+	// (GET /api/activity/{proxyId}/aggregate/ip)
+	GetApiActivityProxyIdAggregateIp(c *gin.Context, proxyId string)
+	// Get all activities timeline by ip
+	// (GET /api/activity/{proxyId}/timeline/ip)
+	GetApiActivityProxyIdTimelineIp(c *gin.Context, proxyId string, params GetApiActivityProxyIdTimelineIpParams)
 	// Delete a allow
 	// (DELETE /api/allow/{proxyId})
 	DeleteApiAllowProxyId(c *gin.Context, proxyId string, params DeleteApiAllowProxyIdParams)
@@ -183,6 +209,72 @@ func (siw *ServerInterfaceWrapper) GetApiActivityProxyId(c *gin.Context) {
 	}
 
 	siw.Handler.GetApiActivityProxyId(c, proxyId)
+}
+
+// GetApiActivityProxyIdAggregateIp operation middleware
+func (siw *ServerInterfaceWrapper) GetApiActivityProxyIdAggregateIp(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "proxyId", c.Param("proxyId"), &proxyId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetApiActivityProxyIdAggregateIp(c, proxyId)
+}
+
+// GetApiActivityProxyIdTimelineIp operation middleware
+func (siw *ServerInterfaceWrapper) GetApiActivityProxyIdTimelineIp(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "proxyId", c.Param("proxyId"), &proxyId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetApiActivityProxyIdTimelineIpParams
+
+	// ------------- Required query parameter "ip" -------------
+
+	if paramValue := c.Query("ip"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Query argument ip is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "ip", c.Request.URL.Query(), &params.Ip)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter ip: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetApiActivityProxyIdTimelineIp(c, proxyId, params)
 }
 
 // DeleteApiAllowProxyId operation middleware
@@ -485,6 +577,8 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.GET(options.BaseURL+"/api/activity/:proxyId", wrapper.GetApiActivityProxyId)
+	router.GET(options.BaseURL+"/api/activity/:proxyId/aggregate/ip", wrapper.GetApiActivityProxyIdAggregateIp)
+	router.GET(options.BaseURL+"/api/activity/:proxyId/timeline/ip", wrapper.GetApiActivityProxyIdTimelineIp)
 	router.DELETE(options.BaseURL+"/api/allow/:proxyId", wrapper.DeleteApiAllowProxyId)
 	router.GET(options.BaseURL+"/api/allow/:proxyId", wrapper.GetApiAllowProxyId)
 	router.POST(options.BaseURL+"/api/allow/:proxyId", wrapper.PostApiAllowProxyId)
@@ -500,21 +594,23 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

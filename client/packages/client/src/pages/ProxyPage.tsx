@@ -2,7 +2,10 @@ import { Button, Modal, Popconfirm, Space, Table, Tooltip } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+	CloudOutlined,
+	CloudServerOutlined,
 	DeleteOutlined,
+	EyeOutlined,
 	LineChartOutlined,
 	LockOutlined,
 	PauseCircleOutlined,
@@ -12,7 +15,7 @@ import {
 import Page from './Page';
 import SimpleForm from '../components/SimpleForm';
 import { deleteApiProxy, patchApiProxy, postApiProxy, useGetApiProxy } from '../proxy/proxy';
-import { Proxy } from '../model/index';
+import { PatchProxy, Proxy } from '../model/index';
 
 const ProxyPage: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,8 +42,8 @@ const ProxyPage: React.FC = () => {
 		handleCancel();
 	};
 
-	const onPatchProxy = async (id: string, disable: boolean) => {
-		await patchApiProxy({ disable }, { id });
+	const onPatchProxy = async (id: string, payload: PatchProxy) => {
+		await patchApiProxy(payload, { id });
 		refetch();
 	};
 
@@ -65,6 +68,11 @@ const ProxyPage: React.FC = () => {
 			key: 'actions',
 			render: (text: any, record: Proxy) => (
 				<Space size="middle">
+					<Tooltip title="Open">
+						<a href={"https://" + record.source} target='_blank'>
+							<Button type="primary" icon={<EyeOutlined />} />
+						</a>
+					</Tooltip>
 					<Tooltip title="Activity">
 						<Link to={`/activity/${record.id}`}>
 							<Button type="primary" icon={<LineChartOutlined />} />
@@ -82,9 +90,16 @@ const ProxyPage: React.FC = () => {
 					</Tooltip>
 					<Tooltip title="Pause">
 						<Button
-							onClick={() => onPatchProxy(record.id, !record.disable)}
+							onClick={() => onPatchProxy(record.id, { cache: record.cache, disable: !record.disable })}
 							type={record.disable ? 'primary' : 'dashed'}
 							icon={record.disable ? <PlayCircleOutlined /> : <PauseCircleOutlined />}
+						/>
+					</Tooltip>
+					<Tooltip title="Cache">
+						<Button
+							onClick={() => onPatchProxy(record.id, { cache: !record.cache, disable: record.disable })}
+							type={record.cache ? 'primary' : 'dashed'}
+							icon={record.cache ? <CloudServerOutlined /> : <CloudOutlined />}
 						/>
 					</Tooltip>
 					<Tooltip title="Delete">

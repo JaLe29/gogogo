@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -112,10 +113,70 @@ type OpenApiServer struct {
 	container container.AppContainer
 }
 
+func (aps *OpenApiServer) GetApiActivityProxyIdTimelineIp(c *gin.Context, proxyId string, params openapi.GetApiActivityProxyIdTimelineIpParams) {
+	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId), db.Activity.IP.Equals(params.Ip)).Exec(aps.container.Context)
+
+	roundDownToNearestTenMinutes := func(t time.Time) time.Time {
+		return t.Truncate(10 * time.Minute)
+	}
+
+	aggregateData := func(data []db.ActivityModel) []map[string]interface{} {
+		counts := make(map[time.Time]int)
+		for _, point := range data {
+			rounded := roundDownToNearestTenMinutes(point.CreatedAt)
+			counts[rounded]++
+		}
+
+		// Convert counts map to a slice of maps for the output
+		var intervals []map[string]interface{}
+		for date, count := range counts {
+			intervals = append(intervals, map[string]interface{}{
+				"createdAt": date,
+				"sum":       count,
+			})
+		}
+
+		// Sort intervals by date
+		sort.Slice(intervals, func(i, j int) bool {
+			return intervals[i]["createdAt"].(time.Time).Before(intervals[j]["createdAt"].(time.Time))
+		})
+
+		return intervals
+	}
+
+	c.JSON(http.StatusOK, aggregateData(res))
+}
+
+func (aps *OpenApiServer) GetApiActivityProxyIdAggregateIp(c *gin.Context, proxyId string) {
+	type Aggregate struct {
+		Ip  string `json:"ip"`
+		Sum int    `json:"sum"`
+	}
+
+	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId)).Exec(aps.container.Context)
+
+	ipCount := make(map[string]int)
+	for _, obj := range res {
+		fmt.Println(ipCount[obj.IP])
+		ipCount[obj.IP]++
+	}
+
+	var aggregates []Aggregate
+	for ip, loop := range ipCount {
+		aggregates = append(aggregates, Aggregate{Ip: ip, Sum: loop})
+	}
+	sort.Slice(aggregates, func(i, j int) bool {
+		return aggregates[i].Sum > aggregates[j].Sum
+	})
+
+	c.JSON(http.StatusOK, aggregates)
+}
+
 // PatchApiProxy implements openapi.ServerInterface.
 func (aps *OpenApiServer) PatchApiProxy(c *gin.Context, params openapi.PatchApiProxyParams) {
 	type Proxy struct {
 		Disable bool `json:"disable" validate:"nonzero"`
+		Cache   bool `json:"cache" validate:"nonzero"`
 	}
 
 	var d Proxy
@@ -129,6 +190,7 @@ func (aps *OpenApiServer) PatchApiProxy(c *gin.Context, params openapi.PatchApiP
 	fmt.Println(params.Id)
 	aps.container.PrismaClient.Proxy.FindUnique(db.Proxy.ID.Equals(params.Id)).Update(
 		db.Proxy.Disable.Set(d.Disable),
+		db.Proxy.Cache.Set(d.Cache),
 	).Exec(aps.container.Context)
 
 	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
@@ -261,6 +323,7 @@ func (aps *OpenApiServer) PostApiProxy(c *gin.Context) {
 		db.Proxy.Source.Set(p.Source),
 		db.Proxy.Target.Set(p.Target),
 		db.Proxy.Disable.Set(false),
+		db.Proxy.Cache.Set(false),
 	).Exec(aps.container.Context)
 
 	aps.container.RefetchDomainMap()

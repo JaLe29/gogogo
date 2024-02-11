@@ -5,7 +5,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface PatchProxy {
-  cache: boolean;
-  disable: boolean;
+export interface ActivityIpAggregate {
+  ip: string;
+  sum?: number;
 }

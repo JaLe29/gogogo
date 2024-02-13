@@ -17,29 +17,30 @@ model Proxy {
   target    String
   disable   Boolean
   cache     Boolean
+  guardActive     Boolean
 
   // Relation to Activity
   activities Activity[]
   // Relation to Block
-  blocks Block[]
+  blocks     Block[]
 
   // Relation to Allow
   allows Allow[]
+  Guard  Guard[]
 }
 
 model Activity {
   // ----------------------------------------------
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   // ----------------------------------------------
-  ip        String  @db.String
+  ip        String   @db.String
   // ----------------------------------------------
   // Relation to Proxy
-  proxy       Proxy?   @relation(fields: [proxyId], references: [id])
-  proxyId     String?  @db.ObjectId
+  proxy     Proxy?   @relation(fields: [proxyId], references: [id])
+  proxyId   String?  @db.ObjectId
 }
-
 
 model Block {
   // ----------------------------------------------
@@ -47,11 +48,11 @@ model Block {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   // ----------------------------------------------
-  ip        String  @db.String
+  ip        String   @db.String
   // ----------------------------------------------
   // Relation to Proxy
-  proxy       Proxy?   @relation(fields: [proxyId], references: [id])
-  proxyId     String?  @db.ObjectId
+  proxy     Proxy?   @relation(fields: [proxyId], references: [id])
+  proxyId   String?  @db.ObjectId
 }
 
 model Allow {
@@ -60,9 +61,23 @@ model Allow {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   // ----------------------------------------------
-  ip        String  @db.String
+  ip        String   @db.String
   // ----------------------------------------------
   // Relation to Proxy
-  proxy       Proxy?   @relation(fields: [proxyId], references: [id])
-  proxyId     String?  @db.ObjectId
+  proxy     Proxy?   @relation(fields: [proxyId], references: [id])
+  proxyId   String?  @db.ObjectId
+}
+
+model Guard {
+  // ----------------------------------------------
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // ----------------------------------------------
+  email     String   @db.String
+  password  String   @db.String
+  // ----------------------------------------------
+  // Relation to Proxy
+  proxy     Proxy?   @relation(fields: [proxyId], references: [id])
+  proxyId   String?  @db.ObjectId
 }

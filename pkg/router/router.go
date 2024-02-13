@@ -113,6 +113,36 @@ type OpenApiServer struct {
 	container container.AppContainer
 }
 
+// DeleteApiGuardProxyId implements openapi.ServerInterface.
+func (aps *OpenApiServer) DeleteApiGuardProxyId(c *gin.Context, proxyId string, params openapi.DeleteApiGuardProxyIdParams) {
+	aps.container.PrismaClient.Guard.FindUnique(db.Guard.ID.Equals(params.Id)).Delete().Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
+}
+
+// PostApiGuardProxyId implements openapi.ServerInterface.
+func (aps *OpenApiServer) PostApiGuardProxyId(c *gin.Context, proxyId string) {
+	type Guard struct {
+		Email    string `json:"email" validate:"nonzero"`
+		Password string `json:"eassword" validate:"nonzero"`
+	}
+
+	var g Guard
+	if err := c.ShouldBindJSON(&g); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	aps.container.PrismaClient.Guard.CreateOne(
+		db.Guard.Email.Set(g.Email),
+		db.Guard.Password.Set(g.Password),
+	).Exec(aps.container.Context)
+
+	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
+}
+
 func (aps *OpenApiServer) GetApiActivityProxyIdTimelineIp(c *gin.Context, proxyId string, params openapi.GetApiActivityProxyIdTimelineIpParams) {
 	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId), db.Activity.IP.Equals(params.Ip)).Exec(aps.container.Context)
 
@@ -324,6 +354,7 @@ func (aps *OpenApiServer) PostApiProxy(c *gin.Context) {
 		db.Proxy.Target.Set(p.Target),
 		db.Proxy.Disable.Set(false),
 		db.Proxy.Cache.Set(false),
+		db.Proxy.Guard.Set(false),
 	).Exec(aps.container.Context)
 
 	aps.container.RefetchDomainMap()

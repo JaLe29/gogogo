@@ -65,6 +65,12 @@ type NewBlock struct {
 	Ip string `json:"ip"`
 }
 
+// NewGuard defines model for NewGuard.
+type NewGuard struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 // NewProxy defines model for NewProxy.
 type NewProxy struct {
 	Source string `json:"source"`
@@ -82,6 +88,7 @@ type Proxy struct {
 	Cache     bool      `json:"cache"`
 	CreatedAt time.Time `json:"createdAt"`
 	Disable   bool      `json:"disable"`
+	Guard     bool      `json:"guard"`
 	Id        string    `json:"id"`
 	Source    string    `json:"source"`
 	Target    string    `json:"target"`
@@ -111,6 +118,12 @@ type DeleteApiBlockProxyIdParams struct {
 	Id string `form:"id" json:"id"`
 }
 
+// DeleteApiGuardProxyIdParams defines parameters for DeleteApiGuardProxyId.
+type DeleteApiGuardProxyIdParams struct {
+	// Id Id of the block
+	Id string `form:"id" json:"id"`
+}
+
 // DeleteApiProxyParams defines parameters for DeleteApiProxy.
 type DeleteApiProxyParams struct {
 	// Id Id of the proxy
@@ -128,6 +141,9 @@ type PostApiAllowProxyIdJSONRequestBody = NewAllow
 
 // PostApiBlockProxyIdJSONRequestBody defines body for PostApiBlockProxyId for application/json ContentType.
 type PostApiBlockProxyIdJSONRequestBody = NewBlock
+
+// PostApiGuardProxyIdJSONRequestBody defines body for PostApiGuardProxyId for application/json ContentType.
+type PostApiGuardProxyIdJSONRequestBody = NewGuard
 
 // PatchApiProxyJSONRequestBody defines body for PatchApiProxy for application/json ContentType.
 type PatchApiProxyJSONRequestBody = PatchProxy
@@ -164,6 +180,12 @@ type ServerInterface interface {
 	// Create a new block
 	// (POST /api/block/{proxyId})
 	PostApiBlockProxyId(c *gin.Context, proxyId string)
+	// Disable guard
+	// (DELETE /api/guard/{proxyId})
+	DeleteApiGuardProxyId(c *gin.Context, proxyId string, params DeleteApiGuardProxyIdParams)
+	// Enable guard
+	// (POST /api/guard/{proxyId})
+	PostApiGuardProxyId(c *gin.Context, proxyId string)
 	// Delete a proxy
 	// (DELETE /api/proxy)
 	DeleteApiProxy(c *gin.Context, params DeleteApiProxyParams)
@@ -457,6 +479,72 @@ func (siw *ServerInterfaceWrapper) PostApiBlockProxyId(c *gin.Context) {
 	siw.Handler.PostApiBlockProxyId(c, proxyId)
 }
 
+// DeleteApiGuardProxyId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteApiGuardProxyId(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "proxyId", c.Param("proxyId"), &proxyId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteApiGuardProxyIdParams
+
+	// ------------- Required query parameter "id" -------------
+
+	if paramValue := c.Query("id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Query argument id is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "id", c.Request.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteApiGuardProxyId(c, proxyId, params)
+}
+
+// PostApiGuardProxyId operation middleware
+func (siw *ServerInterfaceWrapper) PostApiGuardProxyId(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "proxyId" -------------
+	var proxyId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "proxyId", c.Param("proxyId"), &proxyId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter proxyId: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.PostApiGuardProxyId(c, proxyId)
+}
+
 // DeleteApiProxy operation middleware
 func (siw *ServerInterfaceWrapper) DeleteApiProxy(c *gin.Context) {
 
@@ -585,6 +673,8 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.DELETE(options.BaseURL+"/api/block/:proxyId", wrapper.DeleteApiBlockProxyId)
 	router.GET(options.BaseURL+"/api/block/:proxyId", wrapper.GetApiBlockProxyId)
 	router.POST(options.BaseURL+"/api/block/:proxyId", wrapper.PostApiBlockProxyId)
+	router.DELETE(options.BaseURL+"/api/guard/:proxyId", wrapper.DeleteApiGuardProxyId)
+	router.POST(options.BaseURL+"/api/guard/:proxyId", wrapper.PostApiGuardProxyId)
 	router.DELETE(options.BaseURL+"/api/proxy", wrapper.DeleteApiProxy)
 	router.GET(options.BaseURL+"/api/proxy", wrapper.GetApiProxy)
 	router.PATCH(options.BaseURL+"/api/proxy", wrapper.PatchApiProxy)
@@ -594,23 +684,25 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

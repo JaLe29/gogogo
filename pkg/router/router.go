@@ -354,7 +354,7 @@ func (aps *OpenApiServer) PostApiProxy(c *gin.Context) {
 		db.Proxy.Target.Set(p.Target),
 		db.Proxy.Disable.Set(false),
 		db.Proxy.Cache.Set(false),
-		db.Proxy.Guard.Set(false),
+		db.Proxy.GuardActive.Set(false),
 	).Exec(aps.container.Context)
 
 	aps.container.RefetchDomainMap()

@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/control-has-associated-label */
 import { Button, Modal, Popconfirm, Space, Table, Tooltip } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,6 +12,7 @@ import {
 	PauseCircleOutlined,
 	PlayCircleOutlined,
 	UnlockOutlined,
+	VerifiedOutlined,
 } from '@ant-design/icons';
 import Page from './Page';
 import SimpleForm from '../components/SimpleForm';
@@ -69,7 +71,7 @@ const ProxyPage: React.FC = () => {
 			render: (text: any, record: Proxy) => (
 				<Space size="middle">
 					<Tooltip title="Open">
-						<a href={"https://" + record.source} target='_blank'>
+						<a href={`https://${record.source}`} target="_blank" rel="noreferrer">
 							<Button type="primary" icon={<EyeOutlined />} />
 						</a>
 					</Tooltip>
@@ -86,6 +88,11 @@ const ProxyPage: React.FC = () => {
 					<Tooltip title="Allow">
 						<Link to={`/allow/${record.id}`}>
 							<Button type="primary" icon={<UnlockOutlined />} />
+						</Link>
+					</Tooltip>
+					<Tooltip title="Guard">
+						<Link to={`/guard/${record.id}`}>
+							<Button type="primary" icon={<VerifiedOutlined />} />
 						</Link>
 					</Tooltip>
 					<Tooltip title="Pause">

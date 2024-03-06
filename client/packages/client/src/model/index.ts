@@ -17,6 +17,7 @@ export * from './deleteApiGuardProxyIdParams';
 export * from './deleteApiProxyParams';
 export * from './deleteProxyParams';
 export * from './getApiActivityProxyIdTimelineIpParams';
+export * from './guard';
 export * from './newAllow';
 export * from './newBlock';
 export * from './newGuard';

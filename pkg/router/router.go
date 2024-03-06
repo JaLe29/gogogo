@@ -3,13 +3,15 @@ package router
 import (
 	"bastard-proxy/db"
 	container "bastard-proxy/pkg/container"
+	"bastard-proxy/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	metricsPkg "bastard-proxy/pkg/metrics"
 	openapi "bastard-proxy/pkg/openapi"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -71,11 +73,34 @@ func HealthHandler(c container.AppContainer, w http.ResponseWriter, r *http.Requ
 
 // ------------------- system
 
+var createMetricsMiddleware = func(metrics metricsPkg.Metrics) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		startTime := time.Now()
+
+		// Process the request
+		c.Next()
+
+		// Get the original path
+		path := c.Request.URL.Path
+
+		metricsLabels := metricsPkg.Labels{
+			Method: c.Request.Method,
+			Route:  path,
+			Status: strconv.Itoa(c.Writer.Status()),
+		}
+
+		// Record the metrics
+		metrics.HandlerExecutionTime(metricsLabels).Observe(float64(time.Since(startTime).Milliseconds()))
+	}
+}
+
 func InitRouter(c container.AppContainer) {
 	c.Logger.Info("Starting rest server")
 
-	// gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 	ginRouter := gin.Default()
+
+	ginRouter.Use(createMetricsMiddleware(*c.Metrics))
 
 	clientDir := "./dist"
 
@@ -113,6 +138,18 @@ type OpenApiServer struct {
 	container container.AppContainer
 }
 
+// GetApiGuardProxyId implements openapi.ServerInterface.
+func (aps *OpenApiServer) GetApiGuardProxyId(c *gin.Context, proxyId string) {
+	res, _ := aps.container.PrismaClient.Guard.FindMany(db.Guard.ProxyID.Equals(proxyId)).Exec(aps.container.Context)
+
+	// clear password from response
+	for i := range res {
+		res[i].Password = ""
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 // DeleteApiGuardProxyId implements openapi.ServerInterface.
 func (aps *OpenApiServer) DeleteApiGuardProxyId(c *gin.Context, proxyId string, params openapi.DeleteApiGuardProxyIdParams) {
 	aps.container.PrismaClient.Guard.FindUnique(db.Guard.ID.Equals(params.Id)).Delete().Exec(aps.container.Context)
@@ -124,7 +161,7 @@ func (aps *OpenApiServer) DeleteApiGuardProxyId(c *gin.Context, proxyId string, 
 func (aps *OpenApiServer) PostApiGuardProxyId(c *gin.Context, proxyId string) {
 	type Guard struct {
 		Email    string `json:"email" validate:"nonzero"`
-		Password string `json:"eassword" validate:"nonzero"`
+		Password string `json:"password" validate:"nonzero"`
 	}
 
 	var g Guard
@@ -135,71 +172,15 @@ func (aps *OpenApiServer) PostApiGuardProxyId(c *gin.Context, proxyId string) {
 		return
 	}
 
+	pswHash, _ := utils.HashPassword(g.Password)
+
 	aps.container.PrismaClient.Guard.CreateOne(
 		db.Guard.Email.Set(g.Email),
-		db.Guard.Password.Set(g.Password),
+		db.Guard.Password.Set(pswHash),
+		db.Guard.ProxyID.Set(proxyId),
 	).Exec(aps.container.Context)
 
 	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
-}
-
-func (aps *OpenApiServer) GetApiActivityProxyIdTimelineIp(c *gin.Context, proxyId string, params openapi.GetApiActivityProxyIdTimelineIpParams) {
-	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId), db.Activity.IP.Equals(params.Ip)).Exec(aps.container.Context)
-
-	roundDownToNearestTenMinutes := func(t time.Time) time.Time {
-		return t.Truncate(10 * time.Minute)
-	}
-
-	aggregateData := func(data []db.ActivityModel) []map[string]interface{} {
-		counts := make(map[time.Time]int)
-		for _, point := range data {
-			rounded := roundDownToNearestTenMinutes(point.CreatedAt)
-			counts[rounded]++
-		}
-
-		// Convert counts map to a slice of maps for the output
-		var intervals []map[string]interface{}
-		for date, count := range counts {
-			intervals = append(intervals, map[string]interface{}{
-				"createdAt": date,
-				"sum":       count,
-			})
-		}
-
-		// Sort intervals by date
-		sort.Slice(intervals, func(i, j int) bool {
-			return intervals[i]["createdAt"].(time.Time).Before(intervals[j]["createdAt"].(time.Time))
-		})
-
-		return intervals
-	}
-
-	c.JSON(http.StatusOK, aggregateData(res))
-}
-
-func (aps *OpenApiServer) GetApiActivityProxyIdAggregateIp(c *gin.Context, proxyId string) {
-	type Aggregate struct {
-		Ip  string `json:"ip"`
-		Sum int    `json:"sum"`
-	}
-
-	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId)).Exec(aps.container.Context)
-
-	ipCount := make(map[string]int)
-	for _, obj := range res {
-		fmt.Println(ipCount[obj.IP])
-		ipCount[obj.IP]++
-	}
-
-	var aggregates []Aggregate
-	for ip, loop := range ipCount {
-		aggregates = append(aggregates, Aggregate{Ip: ip, Sum: loop})
-	}
-	sort.Slice(aggregates, func(i, j int) bool {
-		return aggregates[i].Sum > aggregates[j].Sum
-	})
-
-	c.JSON(http.StatusOK, aggregates)
 }
 
 // PatchApiProxy implements openapi.ServerInterface.
@@ -322,13 +303,6 @@ func (aps *OpenApiServer) DeleteApiProxy(c *gin.Context, params openapi.DeleteAp
 	c.JSON(http.StatusOK, &openapi.SuccessResponse{Message: "OK"})
 }
 
-// GetActivity implements openapi.ServerInterface.
-func (aps *OpenApiServer) GetApiActivityProxyId(c *gin.Context, proxyId string) {
-	res, _ := aps.container.PrismaClient.Activity.FindMany(db.Activity.ProxyID.Equals(proxyId)).Exec(aps.container.Context)
-
-	c.JSON(http.StatusOK, res)
-}
-
 func (aps *OpenApiServer) GetApiProxy(c *gin.Context) {
 	res, _ := aps.container.PrismaClient.Proxy.FindMany().Exec(aps.container.Context)
 	fmt.Println(res)
@@ -354,7 +328,6 @@ func (aps *OpenApiServer) PostApiProxy(c *gin.Context) {
 		db.Proxy.Target.Set(p.Target),
 		db.Proxy.Disable.Set(false),
 		db.Proxy.Cache.Set(false),
-		db.Proxy.GuardActive.Set(false),
 	).Exec(aps.container.Context)
 
 	aps.container.RefetchDomainMap()

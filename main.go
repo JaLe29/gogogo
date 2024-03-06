@@ -3,9 +3,11 @@ package main
 import (
 	db "bastard-proxy/db"
 	container "bastard-proxy/pkg/container"
+	"bastard-proxy/pkg/metrics"
 	router "bastard-proxy/pkg/router"
 	"bastard-proxy/pkg/utils"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -13,54 +15,22 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strconv"
+	"strings"
+
+	config "bastard-proxy/pkg/config"
 
 	"github.com/coocood/freecache"
-	"github.com/joho/godotenv"
-	// "github.com/golang-jwt/jwt/v5"
 )
 
 func main() {
-	/*
-		secret := []byte("dssdadsasdasdasda")
-		t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"iss": "my-auth-server",
-			"sub": "john",
-			"foo": 2,
-		})
-		s, e := t.SignedString(secret)
-		fmt.Println(e)
-		fmt.Println(s)
 
-		// sample token string taken from the New example
-		tokenString := s
+	conf, err := config.Load()
 
-		// Parse takes the token string and a function for looking up the key. The latter is especially
-		// useful if you use multiple keys for your application.  The standard is to use 'kid' in the
-		// head of the token to identify which key to use, but the parsed token (head and claims) is provided
-		// to the callback, providing flexibility.
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Don't forget to validate the alg is what you expect:
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-			}
+	if err != nil {
+		panic(err)
+	}
 
-			// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-			return secret, nil
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			fmt.Println(claims)
-		} else {
-			fmt.Println(err)
-		}
-	*/
-
-	godotenv.Load()
-
-	c := container.InitContainer()
+	c := container.InitContainer(conf)
 
 	go startProxy(c)
 	router.InitRouter(c)
@@ -109,10 +79,18 @@ func startProxy(container container.AppContainer) {
 	container.Logger.Info("Starting proxy server")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if proxyObj, ok := (*container.DomainMap)[r.Host]; ok {
+		requestHost := strings.TrimPrefix(r.Host, "www.")
+		fmt.Println("req to: " + requestHost)
+		if proxyObj, ok := (*container.DomainMap)[requestHost]; ok {
 			clientIp := utils.ReadUserIP(r)
 
+			fmt.Println("req to: " + requestHost + ", target:" + proxyObj.TargetProxy + ", clientIp: " + clientIp)
+
+			c := *container.Metrics
+			c.HandleActivity(metrics.Activity{Ip: clientIp, ProxyId: proxyObj.Id, Host: requestHost})
+
 			hasAllowMap := (*container.AllowMap)[proxyObj.Id] != nil
+			isGuardEnabled := (*container.GuardMap)[proxyObj.Id]
 			isDisabled := proxyObj.Disable
 
 			if (hasAllowMap && !(*container.AllowMap)[proxyObj.Id][clientIp]) || isDisabled {
@@ -129,44 +107,19 @@ func startProxy(container container.AppContainer) {
 				}
 			}
 
-			authToken, errorAuthToken := r.Cookie("ap-token")
-			// fmt.Println(authToken.Value)
-			if authToken == nil || errorAuthToken != nil {
-				// adminDomain := os.Getenv("ADMIN_DOMAIN")
-				loginForm := []byte(
-					`
+			if isGuardEnabled {
+				authToken, errorAuthToken := r.Cookie("ap-token")
+
+				if authToken == nil || errorAuthToken != nil {
+					loginForm := []byte(
+						`
 						<!DOCTYPE html>
 						<html lang="cs">
 						<head>
 							<meta charset="UTF-8">
 							<meta name="viewport" content="width=device-width, initial-scale=1.0">
 							<title>Přihlašovací formulář</title>
-							<script>	
-
-								function setCookie(name,value,days) {
-									var expires = "";
-									if (days) {
-										var date = new Date();
-										date.setTime(date.getTime() + (days*24*60*60*1000));
-										expires = "; expires=" + date.toUTCString();
-									}
-									document.cookie = name + "=" + (value || "")  + expires + "; path=/";
-								}
-
-								function getCookie(name) {
-									var nameEQ = name + "=";
-									var ca = document.cookie.split(';');
-									for(var i=0;i < ca.length;i++) {
-										var c = ca[i];
-										while (c.charAt(0)==' ') c = c.substring(1,c.length);
-										if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-									}
-									return null;
-								}
-
-								function eraseCookie(name) {   
-									document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-								}
+							<script>
 
 								function submitform() {
 										var form = document.getElementById('form');
@@ -181,42 +134,44 @@ func startProxy(container container.AppContainer) {
 
 										xhr.onreadystatechange = function() {
 											if (xhr.readyState == XMLHttpRequest.DONE) {
-												form.reset(); //reset form after AJAX success or do something else 
+												form.reset(); //reset form after AJAX success or do something else
 												if (xhr.response === "OK") {
 													location.reload();
-												} 
+												}
 											}
 										}
 										//Fail the onsubmit to avoid page refresh.
-										return false; 
+										return false;
 								}
 							</script>
 						</head>
-						<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+							<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
 
-						<div style="background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px;">
-							<form id="form" style="display: flex; flex-direction: column; gap: 10px;">
-								<h2 style="text-align: center; margin: 0 0 20px 0;">Přihlášení</h2>
-								<div style="display: flex; flex-direction: column;">
-								<label for="email" style="margin-bottom: 5px;">E-mail</label>
-								<input type="email" id="email" name="email" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-								</div>
-								<div style="display: flex; flex-direction: column;">
-								<label for="password" style="margin-bottom: 5px;">Heslo</label>
-								<input type="password" id="password" name="password" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-								</div>
-								<button value="Submit" type="button" onclick="submitform()" style="padding: 10px; border: none; border-radius: 4px; background-color: #007bff; color: white; cursor: pointer;">Přihlásit se</button>
-							</form>
-						</div>
+							<div style="background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px;">
+								<form id="form" style="display: flex; flex-direction: column; gap: 10px;">
+									<h2 style="text-align: center; margin: 0 0 20px 0;">Přihlášení</h2>
+									<div style="display: flex; flex-direction: column;">
+										<label for="email" style="margin-bottom: 5px;">E-mail</label>
+										<input type="email" id="email" name="email" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+									</div>
+										<div style="display: flex; flex-direction: column;">
+										<label for="password" style="margin-bottom: 5px;">Heslo</label>
+										<input type="password" id="password" name="password" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+										<input type="submit" hidden onsubmit="submitform()" />
+									</div>
+									<button value="Submit" type="button" onclick="submitform()" style="padding: 10px; border: none; border-radius: 4px; background-color: #007bff; color: white; cursor: pointer;">Přihlásit se</button>
+								</form>
+							</div>
 
-						</body>
+							</body>
 						</html>
 					`,
-				)
+					)
 
-				w.WriteHeader(http.StatusOK)
-				w.Write(loginForm)
-				return
+					w.WriteHeader(http.StatusOK)
+					w.Write(loginForm)
+					return
+				}
 			}
 
 			isCacheEnabled := proxyObj.Cache
@@ -241,19 +196,19 @@ func startProxy(container container.AppContainer) {
 
 			proxy.ServeHTTP(w, r)
 
-			container.PrismaClient.Activity.CreateOne(
-				db.Activity.IP.Set(clientIp),
-				db.Activity.ProxyID.Set(proxyObj.Id),
-			).Exec(container.Context)
-
 		} else {
-			log.Println("Invalid request " + r.Host)
+			log.Println("Invalid request " + requestHost)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("400 - Bad Request!"))
 		}
 	})
 
 	http.HandleFunc("/__system/logout", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
 		http.SetCookie(w, &http.Cookie{
 			Name:   "ap-token",
 			Value:  "",
@@ -264,13 +219,74 @@ func startProxy(container container.AppContainer) {
 		w.Write([]byte("OK"))
 	})
 
+	http.HandleFunc("/__system/metrics", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// days := 7
+		// container.PrismaClient.Activity.FindMany(db.Activity.CreatedAt.Lt(time.Now().AddDate(0, 0, -1*days))).Delete().Exec(container.Context)
+
+		m := *container.Metrics
+		m.Handler().ServeHTTP(w, r)
+
+		// w.WriteHeader(http.StatusOK)
+		// w.Write([]byte("OK"))
+	})
+
 	http.HandleFunc("/__system/login", func(w http.ResponseWriter, r *http.Request) {
+
+		proxyId := (*container.DomainMap)[r.Host].Id
+
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		type LoginPayload struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+
+		l := &LoginPayload{}
+		err := json.NewDecoder(r.Body).Decode(l)
+
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		guardResponse, err := container.PrismaClient.Guard.FindFirst(
+			db.Guard.ProxyID.Equals(proxyId),
+			db.Guard.Email.Equals(l.Email),
+		).Exec(container.Context)
+
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(guardResponse)
+		if guardResponse == nil {
+			http.Error(w, "Unauthorized 1", http.StatusUnauthorized)
+			return
+		}
+
+		newsPswHash, _ := utils.HashPassword(l.Password)
+		fmt.Println(utils.CheckPasswordHash(l.Password, newsPswHash))
+
+		if !utils.CheckPasswordHash(l.Password, guardResponse.Password) {
+			http.Error(w, "Unauthorized 2", http.StatusUnauthorized)
+			return
+		}
 
 		http.SetCookie(w, &http.Cookie{
 			Name:   "ap-token",
-			Value:  utils.GenerateJwtToken(),
+			Value:  utils.GenerateJwtToken(guardResponse.ID),
 			Path:   "/",
-			MaxAge: 3600,
+			MaxAge: container.Config.CokieTTL,
 		})
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))

@@ -11,16 +11,17 @@ COPY schema.prisma                          ./schema.prisma
 COPY ./client/packages/client/dist          ./dist
 
 RUN go mod download
+RUN go run github.com/steebchen/prisma-client-go prefetch
+
 RUN go run github.com/steebchen/prisma-client-go generate
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o build/main /app/main.go
+RUN rm ./db/*_gen.go
+
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o build/main /app/main.go
 
 # Production image
 FROM gcr.io/distroless/static
-# ARG COMMIT_SHA
-# LABEL GIT_SHA=$COMMIT_SHA
- 
+
 COPY --from=builder /app/build/main     /main
-COPY --from=builder /app/db             /db
 COPY --from=builder /app/dist           /dist
 
 CMD ["/main"]

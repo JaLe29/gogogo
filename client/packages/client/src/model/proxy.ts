@@ -9,7 +9,7 @@ export interface Proxy {
   cache: boolean;
   createdAt: string;
   disable: boolean;
-  guard: boolean;
+  guardActive: boolean;
   id: string;
   source: string;
   target: string;

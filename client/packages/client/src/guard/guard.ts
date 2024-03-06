@@ -5,11 +5,16 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
-  useMutation
+  useMutation,
+  useQuery
 } from '@tanstack/react-query'
 import type {
   MutationFunction,
-  UseMutationOptions
+  QueryFunction,
+  QueryKey,
+  UseMutationOptions,
+  UseQueryOptions,
+  UseQueryResult
 } from '@tanstack/react-query'
 import axios from 'axios'
 import type {
@@ -20,6 +25,9 @@ import type {
 import type {
   DeleteApiGuardProxyIdParams
 } from '../model/deleteApiGuardProxyIdParams'
+import type {
+  Guard
+} from '../model/guard'
 import type {
   NewGuard
 } from '../model/newGuard'
@@ -132,4 +140,62 @@ export const useDeleteApiGuardProxyId = <TError = AxiosError<unknown>,
 
       return useMutation(mutationOptions);
     }
+    /**
+ * Get all guards
+ * @summary Get all guards
+ */
+export const getApiGuardProxyId = (
+    proxyId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Guard[]>> => {
     
+    return axios.get(
+      `/api/guard/${proxyId}`,options
+    );
+  }
+
+
+export const getGetApiGuardProxyIdQueryKey = (proxyId: string,) => {
+    return [`/api/guard/${proxyId}`] as const;
+    }
+
+    
+export const getGetApiGuardProxyIdQueryOptions = <TData = Awaited<ReturnType<typeof getApiGuardProxyId>>, TError = AxiosError<unknown>>(proxyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiGuardProxyId>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiGuardProxyIdQueryKey(proxyId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiGuardProxyId>>> = ({ signal }) => getApiGuardProxyId(proxyId, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(proxyId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiGuardProxyId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetApiGuardProxyIdQueryResult = NonNullable<Awaited<ReturnType<typeof getApiGuardProxyId>>>
+export type GetApiGuardProxyIdQueryError = AxiosError<unknown>
+
+/**
+ * @summary Get all guards
+ */
+export const useGetApiGuardProxyId = <TData = Awaited<ReturnType<typeof getApiGuardProxyId>>, TError = AxiosError<unknown>>(
+ proxyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiGuardProxyId>>, TError, TData>>, axios?: AxiosRequestConfig}
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getGetApiGuardProxyIdQueryOptions(proxyId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

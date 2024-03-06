@@ -24,11 +24,12 @@ func ReadUserIP(r *http.Request) string {
 	return IPAddress
 }
 
-func GenerateJwtToken() string {
+func GenerateJwtToken(userId string) string {
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iss": "my-auth-server",
 		"sub": "john",
-		"foo": 2,
+		// "exp": 1500000000,
+		"userId": userId,
 	})
 	s, e := t.SignedString(secret)
 

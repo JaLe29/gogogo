@@ -93,6 +93,85 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /api/guard-exclude/{proxyId}:
+    post:
+      tags:
+        - Guard
+      summary: Enable guard exclude
+      description: Enable guard exclude
+      parameters:
+        - in: path
+          name: proxyId
+          schema:
+            type: string
+          required: true
+          description: Id of parent proxy
+
+      requestBody:
+         required: true
+         content:
+           application/json:
+             schema:
+               $ref: "#/components/schemas/NewGuardExluce"
+
+      responses:
+        "200":
+          description: Guard response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+    get:
+      tags:
+        - Guard
+      summary: Get all guard exclude
+      description: Get all guard exclude
+      parameters:
+        - in: path
+          name: proxyId
+          schema:
+            type: string
+          required: true
+          description: Id of parent proxy
+
+      responses:
+        "200":
+          description: Guard response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GuardExluce"
+
+    delete:
+      tags:
+        - Guard
+      summary: Disable guard exclude
+      description: Disable guard exclude
+      parameters:
+        - name: id
+          in: query
+          description: Id of the block
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: proxyId
+          schema:
+            type: string
+          required: true
+          description: Id of parent proxy
+
+      responses:
+        "200":
+          description: Guard response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
   /api/guard/{proxyId}:
     post:
       tags:
@@ -369,7 +448,7 @@ components:
         - source
         - target
         - disable
-        - cache 
+        - cache
       properties:
         id:
           type: string
@@ -383,7 +462,7 @@ components:
         disable:
           type: boolean
         cache:
-          type: boolean  
+          type: boolean
 
     NewBlock:
       required:
@@ -453,4 +532,21 @@ components:
         email:
           type: string
         id:
+          type: string
+
+    NewGuardExluce:
+      required:
+        - path
+      properties:
+        path:
+          type: string
+
+    GuardExluce:
+      required:
+        - id
+        - path
+      properties:
+        id:
+          type: string
+        path:
           type: string

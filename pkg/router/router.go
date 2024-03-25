@@ -138,6 +138,21 @@ type OpenApiServer struct {
 	container container.AppContainer
 }
 
+// DeleteApiGuardExcludeGuardId implements openapi.ServerInterface.
+func (aps *OpenApiServer) DeleteApiGuardExcludeGuardId(c *gin.Context, guardId string, params openapi.DeleteApiGuardExcludeGuardIdParams) {
+	panic("implement me")
+}
+
+// GetApiGuardExcludeGuardId implements openapi.ServerInterface.
+func (aps *OpenApiServer) GetApiGuardExcludeGuardId(c *gin.Context, guardId string) {
+	panic("implement me")
+}
+
+// PostApiGuardExcludeGuardId implements openapi.ServerInterface.
+func (aps *OpenApiServer) PostApiGuardExcludeGuardId(c *gin.Context, guardId string) {
+	panic("implement me")
+}
+
 // GetApiGuardProxyId implements openapi.ServerInterface.
 func (aps *OpenApiServer) GetApiGuardProxyId(c *gin.Context, proxyId string) {
 	res, _ := aps.container.PrismaClient.Guard.FindMany(db.Guard.ProxyID.Equals(proxyId)).Exec(aps.container.Context)

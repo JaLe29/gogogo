@@ -6,6 +6,7 @@ import (
 	"bastard-proxy/pkg/logger"
 	"bastard-proxy/pkg/metrics"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -25,10 +26,11 @@ type AppContainer struct {
 	Context      context.Context
 	PrismaClient *db.PrismaClient
 
-	GuardMap  *map[string]bool
-	DomainMap *map[string]Domain
-	BlockMap  *map[string]map[string]bool
-	AllowMap  *map[string]map[string]bool
+	GuardMap        *map[string]bool
+	GuardExcludeMap *map[string]bool
+	DomainMap       *map[string]Domain
+	BlockMap        *map[string]map[string]bool
+	AllowMap        *map[string]map[string]bool
 
 	RefetchDomainMap func()
 	RefetchBlockMap  func()
@@ -54,6 +56,7 @@ func InitContainer(conf config.Config) AppContainer {
 	bm := &map[string]map[string]bool{}
 	am := &map[string]map[string]bool{}
 	gm := &map[string]bool{}
+	gem := &map[string]bool{}
 
 	// check admin domain
 	adminDomain := conf.AdminDomain
@@ -140,6 +143,22 @@ func InitContainer(conf config.Config) AppContainer {
 		}
 	}
 
+	refetchGuardExcludeMap := func() {
+		res, _ := client.GuardExclude.FindMany().Exec(context)
+		fmt.Println("Refetching guard exclude map")
+		fmt.Println(res)
+		clear(*gem)
+
+		for _, ge := range res {
+			gid, _ := ge.ProxyID()
+
+			key := gid + ge.Path
+			fmt.Println("Insertin key: ", key)
+			(*gem)[key] = true
+
+		}
+	}
+
 	fireInitialRefetch := func() {
 		ticker := time.NewTicker(60 * time.Second)
 		quit := make(chan struct{})
@@ -151,6 +170,7 @@ func InitContainer(conf config.Config) AppContainer {
 					refetchBlockMap()
 					refetchAllowMap()
 					refetchGuardMap()
+					refetchGuardExcludeMap()
 				case <-quit:
 					ticker.Stop()
 					return
@@ -163,6 +183,7 @@ func InitContainer(conf config.Config) AppContainer {
 	refetchBlockMap()
 	refetchAllowMap()
 	refetchGuardMap()
+	refetchGuardExcludeMap()
 
 	fireInitialRefetch()
 
@@ -219,10 +240,23 @@ func InitContainer(conf config.Config) AppContainer {
 		}
 	}
 
+	startWatchGuardExclude := func() {
+		changeStream, err := mongoClient.Database("bastard-proxy").Collection("GuardExclude").Watch(context, mongo.Pipeline{}, options.ChangeStream())
+		if err != nil {
+			panic(err)
+		}
+
+		for changeStream.Next(context) {
+			// fmt.Println(changeStream.Current)
+			refetchGuardExcludeMap()
+		}
+	}
+
 	go startWatchBlock()
 	go startWatchProxy()
 	go startWatchAllow()
 	go startWatchGuard()
+	go startWatchGuardExclude()
 
 	logger := logger.New()
 
@@ -239,5 +273,6 @@ func InitContainer(conf config.Config) AppContainer {
 		Logger:           logger,
 		MongoClient:      mongoClient,
 		Metrics:          &metricsInstance,
+		GuardExcludeMap:  gem,
 	}
 }

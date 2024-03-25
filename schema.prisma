@@ -25,6 +25,8 @@ model Proxy {
   // Relation to Allow
   allows Allow[]
   Guard  Guard[]
+
+  guardExcludes GuardExclude[]
 }
 
 model Block {
@@ -65,9 +67,6 @@ model Guard {
   // Relation to Proxy
   proxy     Proxy?   @relation(fields: [proxyId], references: [id])
   proxyId   String?  @db.ObjectId
-
-  // Relation to GuardExclude
-  guardExcludes GuardExclude[]
 }
 
 model GuardExclude {
@@ -78,7 +77,6 @@ model GuardExclude {
   // ----------------------------------------------
   path     String   @db.String
   // ----------------------------------------------
-  // Relation to Guard
-  guard     Guard?   @relation(fields: [guardId], references: [id])
-  guardId   String?  @db.ObjectId
+  proxy     Proxy?   @relation(fields: [proxyId], references: [id])
+  proxyId   String?  @db.ObjectId
 }

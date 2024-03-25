@@ -33,6 +33,10 @@ func main() {
 
 	c := container.InitContainer(conf)
 
+	//r, _ := c.PrismaClient.GuardExclude.FindMany().Exec(c.Context)
+	//c.PrismaClient.GuardExclude.CreateOne(db.GuardExclude.Path.Set("1"), db.GuardExclude.GuardID.Set("6601537ef5d14f90f01a754c")).Exec(c.Context)
+	//fmt.Println(r)
+
 	go startProxy(c)
 	router.InitRouter(c)
 }
@@ -110,21 +114,29 @@ func startProxy(container container.AppContainer) {
 			}
 
 			if isGuardEnabled {
-				authToken, errorAuthToken := r.Cookie("ap-token")
+				key := proxyObj.Id + r.URL.Path
+				fmt.Println(key)
+				fmt.Println(*container.GuardExcludeMap)
 
-				fmt.Println(authToken)
-				fmt.Printf("%+v\n", errorAuthToken)
+				if (*container.GuardExcludeMap)[key] != true {
 
-				if authToken == nil || errorAuthToken != nil {
-					htmlFile := "./login-dist/index.html"
-					htmlBody, err := os.ReadFile(htmlFile)
-					if err != nil {
-						log.Fatalf("unable to read file: %v", err)
+					authToken, errorAuthToken := r.Cookie("ap-token")
+
+					fmt.Println(authToken)
+					fmt.Printf("%+v\n", errorAuthToken)
+
+					if authToken == nil || errorAuthToken != nil {
+						htmlFile := "./login-dist/index.html"
+						htmlBody, err := os.ReadFile(htmlFile)
+						if err != nil {
+							log.Fatalf("unable to read file: %v", err)
+						}
+						w.WriteHeader(http.StatusOK)
+						w.Write(htmlBody)
+						return
 					}
-					w.WriteHeader(http.StatusOK)
-					w.Write(htmlBody)
-					return
 				}
+
 			}
 
 			isCacheEnabled := proxyObj.Cache

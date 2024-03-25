@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -85,6 +86,7 @@ func startProxy(container container.AppContainer) {
 			clientIp := utils.ReadUserIP(r)
 
 			fmt.Println("req to: " + requestHost + ", target:" + proxyObj.TargetProxy + ", clientIp: " + clientIp)
+			fmt.Println(r.URL.Path)
 
 			c := *container.Metrics
 			c.HandleActivity(metrics.Activity{Ip: clientIp, ProxyId: proxyObj.Id, Host: requestHost})
@@ -110,66 +112,17 @@ func startProxy(container container.AppContainer) {
 			if isGuardEnabled {
 				authToken, errorAuthToken := r.Cookie("ap-token")
 
+				fmt.Println(authToken)
+				fmt.Printf("%+v\n", errorAuthToken)
+
 				if authToken == nil || errorAuthToken != nil {
-					loginForm := []byte(
-						`
-						<!DOCTYPE html>
-						<html lang="cs">
-						<head>
-							<meta charset="UTF-8">
-							<meta name="viewport" content="width=device-width, initial-scale=1.0">
-							<title>Přihlašovací formulář</title>
-							<script>
-
-								function submitform() {
-										var form = document.getElementById('form');
-										var xhr = new XMLHttpRequest();
-										var formData = new FormData(form);
-										//open the request
-										xhr.open('POST', '/__system/login')
-										xhr.setRequestHeader("Content-Type", "application/json");
-
-										//send the form data
-										xhr.send(JSON.stringify(Object.fromEntries(formData)));
-
-										xhr.onreadystatechange = function() {
-											if (xhr.readyState == XMLHttpRequest.DONE) {
-												form.reset(); //reset form after AJAX success or do something else
-												if (xhr.response === "OK") {
-													location.reload();
-												}
-											}
-										}
-										//Fail the onsubmit to avoid page refresh.
-										return false;
-								}
-							</script>
-						</head>
-							<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-
-							<div style="background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px;">
-								<form id="form" style="display: flex; flex-direction: column; gap: 10px;">
-									<h2 style="text-align: center; margin: 0 0 20px 0;">Přihlášení</h2>
-									<div style="display: flex; flex-direction: column;">
-										<label for="email" style="margin-bottom: 5px;">E-mail</label>
-										<input type="email" id="email" name="email" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-									</div>
-										<div style="display: flex; flex-direction: column;">
-										<label for="password" style="margin-bottom: 5px;">Heslo</label>
-										<input type="password" id="password" name="password" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-										<input type="submit" hidden onsubmit="submitform()" />
-									</div>
-									<button value="Submit" type="button" onclick="submitform()" style="padding: 10px; border: none; border-radius: 4px; background-color: #007bff; color: white; cursor: pointer;">Přihlásit se</button>
-								</form>
-							</div>
-
-							</body>
-						</html>
-					`,
-					)
-
+					htmlFile := "./login-dist/index.html"
+					htmlBody, err := os.ReadFile(htmlFile)
+					if err != nil {
+						log.Fatalf("unable to read file: %v", err)
+					}
 					w.WriteHeader(http.StatusOK)
-					w.Write(loginForm)
+					w.Write(htmlBody)
 					return
 				}
 			}
@@ -289,7 +242,18 @@ func startProxy(container container.AppContainer) {
 			MaxAge: container.Config.CokieTTL,
 		})
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		// return ok in json
+
+		type Status struct {
+			Status string
+		}
+		w.Header().Set("Content-Type", "application/json")
+		js, err := json.Marshal(Status{"OK"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(js)
 	})
 
 	router.AddRoute("/_system/health", container, router.RouterMap{Get: router.HealthHandler})
